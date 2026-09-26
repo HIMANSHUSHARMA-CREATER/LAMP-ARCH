@@ -51,16 +51,28 @@ export function StationPad({ station, unlocked, active, onSelect }: StationPadPr
           roughness={0.82}
         />
       </mesh>
-      <mesh position={[0, 1.1, 0]} castShadow>
-        <boxGeometry args={[1.4, 2.2, 1.4]} />
-        <meshStandardMaterial
-          color={unlocked ? "#3f4a4c" : "#252b2d"}
-          emissive={unlocked ? color : "#000000"}
-          emissiveIntensity={unlocked ? 0.05 : 0}
-          metalness={0.28}
-          roughness={0.62}
-        />
-      </mesh>
+      <group position={[0, 0.06, 0]}>
+        <mesh position={[0, 0.95, 0]} castShadow>
+          <boxGeometry args={[1.9, 1.65, 1.65]} />
+          <meshStandardMaterial color={unlocked ? "#b8b0a2" : "#55595a"} roughness={0.88} />
+        </mesh>
+        <mesh position={[0, 1.95, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
+          <coneGeometry args={[1.55, 0.9, 4]} />
+          <meshStandardMaterial color={unlocked ? "#7a5140" : "#343839"} roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.58, 0.84]}>
+          <boxGeometry args={[0.34, 0.72, 0.04]} />
+          <meshStandardMaterial color="#4c352b" roughness={0.78} />
+        </mesh>
+        <mesh position={[-0.58, 1.18, 0.84]}>
+          <boxGeometry args={[0.42, 0.38, 0.04]} />
+          <meshStandardMaterial color="#7b9aa0" metalness={0.1} roughness={0.35} />
+        </mesh>
+        <mesh position={[0.58, 1.18, 0.84]}>
+          <boxGeometry args={[0.42, 0.38, 0.04]} />
+          <meshStandardMaterial color="#7b9aa0" metalness={0.1} roughness={0.35} />
+        </mesh>
+      </group>
       <Text
         position={[0, 2.6, 0]}
         fontSize={0.24}

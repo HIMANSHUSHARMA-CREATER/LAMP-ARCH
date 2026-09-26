@@ -48,7 +48,7 @@ function Road({ rotation = 0, position = [0, 0.07, 0] }: { rotation?: number; po
     <group position={position} rotation={[0, rotation, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[3.8, 46]} />
-        <meshStandardMaterial color="#30373a" roughness={0.96} />
+        <meshStandardMaterial color="#555b5d" roughness={0.94} />
       </mesh>
       <mesh position={[-1.35, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[0.08, 46]} />
