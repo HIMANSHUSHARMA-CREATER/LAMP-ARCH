@@ -1,6 +1,6 @@
 "use client";
 
-import { Grid, Html } from "@react-three/drei";
+import { Grid, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -183,11 +183,17 @@ export function Campus() {
       ))}
 
       {nearbyStation && !frozen && (
-        <Html position={[playerPos.current.x, 2, playerPos.current.z]} center distanceFactor={15}>
-          <div className="rounded-lg bg-cyan-400/90 px-4 py-2 text-sm font-semibold text-slate-950 animate-pulse">
-            Press E to interact
-          </div>
-        </Html>
+        <Text
+          position={[playerPos.current.x, 2, playerPos.current.z]}
+          fontSize={0.28}
+          color="#f4d58b"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.04}
+          outlineColor="#283033"
+        >
+          Press E to interact
+        </Text>
       )}
 
       <Player

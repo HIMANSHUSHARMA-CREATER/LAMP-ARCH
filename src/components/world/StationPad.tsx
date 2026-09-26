@@ -1,6 +1,6 @@
 "use client";
 
-import { Html } from "@react-three/drei";
+import { Text } from "@react-three/drei";
 import { useState } from "react";
 import type { StationConfig } from "@/types/game";
 
@@ -61,18 +61,18 @@ export function StationPad({ station, unlocked, active, onSelect }: StationPadPr
           roughness={0.62}
         />
       </mesh>
-      <Html position={[0, 2.6, 0]} center distanceFactor={18}>
-        <div
-          className={`rounded-md border px-2 py-1 text-center text-xs font-semibold tracking-wide whitespace-nowrap ${
-            unlocked
-              ? "border-white/20 bg-slate-950/80 text-white"
-              : "border-white/10 bg-slate-900/70 text-slate-400"
-          }`}
-        >
-          {station.title}
-          {!unlocked ? " · locked" : ""}
-        </div>
-      </Html>
+      <Text
+        position={[0, 2.6, 0]}
+        fontSize={0.24}
+        color={unlocked ? "#ffffff" : "#9aa4a8"}
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.025}
+        outlineColor="#263033"
+        maxWidth={3.8}
+      >
+        {station.title}{!unlocked ? " · locked" : ""}
+      </Text>
     </group>
   );
 }
