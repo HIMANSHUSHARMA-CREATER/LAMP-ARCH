@@ -18,6 +18,10 @@ export function StationPad({ station, unlocked, active, onSelect }: StationPadPr
 
   return (
     <group position={station.position}>
+      <mesh position={[0, 0.045, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[2.65, 32]} />
+        <meshStandardMaterial color="#b89456" roughness={1} />
+      </mesh>
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, 0.02, 0]}

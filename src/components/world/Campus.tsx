@@ -138,23 +138,27 @@ export function Campus() {
       <directionalLight position={[-10, 18, 8]} intensity={2.2} castShadow shadow-mapSize={[2048, 2048]} />
       <hemisphereLight args={["#dce8ec", "#536066", 1.1]} />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#596367" roughness={0.92} />
+        <meshStandardMaterial color="#c7a15d" roughness={1} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
+        <planeGeometry args={[72, 72]} />
+        <meshStandardMaterial color="#d9b873" roughness={1} />
       </mesh>
       <Grid
         infiniteGrid
         fadeDistance={46}
-        fadeStrength={1.4}
+        fadeStrength={0.45}
         cellSize={2}
         sectionSize={10}
-        cellColor="#697579"
-        sectionColor="#454f53"
-        position={[0, 0.015, 0]}
+        cellColor="#c8a96d"
+        sectionColor="#b59255"
+        position={[0, 0.018, 0]}
       />
       <Sun />
-      <Road rotation={0} position={[-9, 0, 0]} />
-      <Road rotation={Math.PI / 2} position={[0, 0, -9]} />
+      <Road rotation={0} position={[0, 0, 0]} />
+      <Road rotation={Math.PI / 2} position={[0, 0, 0]} />
 
       <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[3.6, 3.6, 0.08, 48]} />
