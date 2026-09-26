@@ -1,0 +1,83 @@
+"use client";
+
+import { Grid } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { useRef, useState } from "react";
+import * as THREE from "three";
+import { WORLD_STATIONS } from "@/content/stations";
+import { CameraRig } from "@/components/world/CameraRig";
+import { Player } from "@/components/world/Player";
+import { StationPad } from "@/components/world/StationPad";
+import { useGameStore } from "@/stores/game-store";
+import type { StationId } from "@/types/game";
+
+export function Campus() {
+  const unlockedStationIds = useGameStore((state) => state.unlockedStationIds);
+  const activeStationId = useGameStore((state) => state.activeStationId);
+  const panel = useGameStore((state) => state.panel);
+  const openStation = useGameStore((state) => state.openStation);
+  const [walkTarget, setWalkTarget] = useState<[number, number, number] | null>(null);
+  const pendingStation = useRef<StationId | null>(null);
+  const playerPos = useRef(new THREE.Vector3(0, 0.45, 6));
+  const frozen = panel !== "none";
+
+  useFrame(({ scene }) => {
+    const player = scene.getObjectByName("lamp-player");
+    if (player) {
+      playerPos.current.copy(player.position);
+    }
+  });
+
+  return (
+    <>
+      <color attach="background" args={["#020617"]} />
+      <fog attach="fog" args={["#020617", 18, 48]} />
+      <ambientLight intensity={0.45} />
+      <directionalLight position={[8, 14, 6]} intensity={1.15} castShadow />
+      <hemisphereLight args={["#1e3a5f", "#020617", 0.4]} />
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#0b1220" />
+      </mesh>
+      <Grid
+        infiniteGrid
+        fadeDistance={42}
+        fadeStrength={4}
+        cellSize={1}
+        sectionSize={5}
+        cellColor="#1e293b"
+        sectionColor="#334155"
+        position={[0, 0.01, 0]}
+      />
+      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[3.2, 3.55, 48]} />
+        <meshStandardMaterial color="#34d399" emissive="#34d399" emissiveIntensity={0.4} />
+      </mesh>
+
+      {WORLD_STATIONS.map((station) => (
+        <StationPad
+          key={station.id}
+          station={station}
+          unlocked={unlockedStationIds.includes(station.id)}
+          active={activeStationId === station.id}
+          onSelect={() => {
+            pendingStation.current = station.id;
+            setWalkTarget(station.position);
+          }}
+        />
+      ))}
+
+      <Player
+        target={walkTarget}
+        frozen={frozen}
+        onArrive={() => {
+          if (pendingStation.current) {
+            openStation(pendingStation.current);
+          }
+        }}
+      />
+      <CameraRig playerPosition={playerPos.current} />
+    </>
+  );
+}

@@ -1,0 +1,82 @@
+import type { Mission } from "@/types/game";
+
+export const mysqlMissions: Mission[] = [
+  {
+    id: "mysql-learn",
+    stationId: "mysql",
+    mode: "learn",
+    title: "Meet MySQL",
+    summary: "Learn where LAMP stores lasting data.",
+    xp: 50,
+    requires: ["php-diy"],
+    steps: [{ id: "mysql-learn-1", type: "read", lessonId: "mysql-db" }],
+  },
+  {
+    id: "mysql-practice",
+    stationId: "mysql",
+    mode: "practice",
+    title: "Talk SQL",
+    summary: "Run simulated MySQL statements.",
+    xp: 75,
+    requires: ["mysql-learn"],
+    steps: [
+      {
+        id: "mysql-practice-show",
+        type: "command",
+        shell: "mysql",
+        prompt: "List databases on this server.",
+        expect: { kind: "includes", value: "show databases" },
+        hint: "SQL: SHOW DATABASES;",
+      },
+      {
+        id: "mysql-practice-use",
+        type: "command",
+        shell: "mysql",
+        prompt: "Select the lamp database.",
+        expect: { kind: "includes", value: "use lamp" },
+        hint: "USE lamp;",
+      },
+      {
+        id: "mysql-practice-quiz",
+        type: "quiz",
+        question: "Why keep data in MySQL instead of only in PHP files?",
+        choices: [
+          "PHP cannot print HTML",
+          "Data survives restarts and can be queried",
+          "Apache cannot listen on port 80",
+          "Linux cannot store files",
+        ],
+        answer: 1,
+        hint: "Think about what happens when the web process restarts.",
+      },
+    ],
+  },
+  {
+    id: "mysql-diy",
+    stationId: "mysql",
+    mode: "diy",
+    title: "Query a table",
+    summary: "Read rows as PHP would.",
+    xp: 100,
+    requires: ["mysql-practice"],
+    steps: [
+      {
+        id: "mysql-diy-select",
+        type: "command",
+        shell: "mysql",
+        prompt: "Select all rows from the students table.",
+        expect: { kind: "includes", value: "select * from students" },
+        hint: "SELECT * FROM students;",
+      },
+      {
+        id: "mysql-diy-checklist",
+        type: "checklist",
+        items: [
+          "PHP sends SQL to MySQL over a connection.",
+          "Tables store rows that Apache never sees directly.",
+        ],
+        hint: "Apache talks to PHP; PHP talks to MySQL.",
+      },
+    ],
+  },
+];
