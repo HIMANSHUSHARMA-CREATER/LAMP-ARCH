@@ -43,6 +43,43 @@ function Tree({ position, scale = 1 }: { position: [number, number, number]; sca
   );
 }
 
+function Road({ rotation = 0, position = [0, 0.07, 0] }: { rotation?: number; position?: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[3.8, 46]} />
+        <meshStandardMaterial color="#30373a" roughness={0.96} />
+      </mesh>
+      <mesh position={[-1.35, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.08, 46]} />
+        <meshStandardMaterial color="#b9ae86" roughness={0.9} />
+      </mesh>
+      <mesh position={[1.35, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.08, 46]} />
+        <meshStandardMaterial color="#b9ae86" roughness={0.9} />
+      </mesh>
+      {[-18, -10, -2, 6, 14, 22].map((z) => (
+        <mesh key={z} position={[0, 0.018, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.12, 3.2]} />
+          <meshStandardMaterial color="#d8c98e" roughness={0.8} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Sun() {
+  return (
+    <group position={[-18, 18, -22]}>
+      <mesh>
+        <sphereGeometry args={[2.4, 32, 20]} />
+        <meshBasicMaterial color="#fff1bd" />
+      </mesh>
+      <pointLight intensity={8} distance={80} color="#ffe7b0" />
+    </group>
+  );
+}
+
 export function Campus() {
   const unlockedStationIds = useGameStore((state) => state.unlockedStationIds);
   const activeStationId = useGameStore((state) => state.activeStationId);
@@ -115,6 +152,10 @@ export function Campus() {
         sectionColor="#454f53"
         position={[0, 0.015, 0]}
       />
+      <Sun />
+      <Road rotation={0} position={[-9, 0, 0]} />
+      <Road rotation={Math.PI / 2} position={[0, 0, -9]} />
+
       <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[3.6, 3.6, 0.08, 48]} />
         <meshStandardMaterial color="#8b9698" roughness={0.8} />
