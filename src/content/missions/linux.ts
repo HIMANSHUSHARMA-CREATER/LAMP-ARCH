@@ -1,0 +1,85 @@
+import type { Mission } from "@/types/game";
+
+export const linuxMissions: Mission[] = [
+  {
+    id: "linux-learn",
+    stationId: "linux",
+    mode: "learn",
+    title: "Meet Linux",
+    summary: "Read how the operating system supports the rest of LAMP.",
+    xp: 50,
+    requires: [],
+    steps: [{ id: "linux-learn-1", type: "read", lessonId: "linux-os" }],
+  },
+  {
+    id: "linux-practice",
+    stationId: "linux",
+    mode: "practice",
+    title: "First shell commands",
+    summary: "Use a simulated bash shell to inspect the filesystem.",
+    xp: 75,
+    requires: ["linux-learn"],
+    steps: [
+      {
+        id: "linux-practice-pwd",
+        type: "command",
+        shell: "bash",
+        prompt: "Print the current working directory.",
+        expect: { kind: "exact", value: "pwd" },
+        hint: "The command is three letters: print working directory.",
+      },
+      {
+        id: "linux-practice-ls",
+        type: "command",
+        shell: "bash",
+        prompt: "List the files in the current directory.",
+        expect: { kind: "exact", value: "ls" },
+        hint: "Use ls (list).",
+      },
+      {
+        id: "linux-practice-whoami",
+        type: "command",
+        shell: "bash",
+        prompt: "Show the current user name.",
+        expect: { kind: "exact", value: "whoami" },
+        hint: "Ask the shell who you are.",
+      },
+      {
+        id: "linux-practice-quiz",
+        type: "quiz",
+        question: "Which LAMP letter is the operating system?",
+        choices: ["Apache", "Linux", "MySQL", "PHP"],
+        answer: 1,
+        hint: "It is the L in LAMP.",
+      },
+    ],
+  },
+  {
+    id: "linux-diy",
+    stationId: "linux",
+    mode: "diy",
+    title: "Prepare a project folder",
+    summary: "Create a workspace the web server could use later.",
+    xp: 100,
+    requires: ["linux-practice"],
+    steps: [
+      {
+        id: "linux-diy-mkdir",
+        type: "command",
+        shell: "bash",
+        prompt: "Create a directory named www.",
+        expect: { kind: "includes", value: "mkdir www" },
+        hint: "mkdir creates folders. Try: mkdir www",
+      },
+      {
+        id: "linux-diy-checklist",
+        type: "checklist",
+        items: [
+          "I know Linux hosts Apache, PHP, and MySQL as processes.",
+          "I can navigate a server with pwd, ls, and mkdir.",
+        ],
+        hint: "Check each statement once you can explain it out loud.",
+      },
+    ],
+  },
+];
