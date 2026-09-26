@@ -21,6 +21,14 @@ export const mysqlMissions: Mission[] = [
     requires: ["mysql-learn"],
     steps: [
       {
+        id: "mysql-practice-install",
+        type: "command",
+        shell: "bash",
+        prompt: "Install MySQL server using apt.",
+        expect: { kind: "includes", value: "apt install mysql-server" },
+        hint: "Use: sudo apt install mysql-server",
+      },
+      {
         id: "mysql-practice-show",
         type: "command",
         shell: "mysql",
@@ -74,6 +82,7 @@ export const mysqlMissions: Mission[] = [
         items: [
           "PHP sends SQL to MySQL over a connection.",
           "Tables store rows that Apache never sees directly.",
+          "Each table should have a primary key for unique identification.",
         ],
         hint: "Apache talks to PHP; PHP talks to MySQL.",
       },

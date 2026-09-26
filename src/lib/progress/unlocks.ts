@@ -37,6 +37,11 @@ export function deriveUnlocks(completedMissionIds: string[]): Pick<
       unlockedModes.lamp = ["learn"];
     }
 
+    if (station === "aws" && completed.has("lamp-diy") && !unlockedStationIds.includes("aws")) {
+      unlockedStationIds.push("aws");
+      unlockedModes.aws = ["learn"];
+    }
+
     if (!unlockedStationIds.includes(station)) {
       continue;
     }
@@ -58,10 +63,17 @@ export function deriveUnlocks(completedMissionIds: string[]): Pick<
         if (next === "lamp" && !fourLayerDiys) {
           continue;
         }
+        if (next === "aws" && !completed.has("lamp-diy")) {
+          continue;
+        }
         unlockedStationIds.push(next);
         unlockedModes[next] = ["learn"];
       }
     }
+  }
+
+  if (completed.has("aws-diy") && !unlockedModes.lamp.includes("diy")) {
+    addMode(unlockedModes.lamp, "diy");
   }
 
   return { unlockedStationIds, unlockedModes };

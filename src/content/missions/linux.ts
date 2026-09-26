@@ -45,6 +45,22 @@ export const linuxMissions: Mission[] = [
         hint: "Ask the shell who you are.",
       },
       {
+        id: "linux-practice-cat",
+        type: "command",
+        shell: "bash",
+        prompt: "Read the contents of readme.md.",
+        expect: { kind: "includes", value: "cat readme.md" },
+        hint: "Use cat to display file contents.",
+      },
+      {
+        id: "linux-practice-touch",
+        type: "command",
+        shell: "bash",
+        prompt: "Create an empty file named index.html.",
+        expect: { kind: "includes", value: "touch index.html" },
+        hint: "touch creates empty files.",
+      },
+      {
         id: "linux-practice-quiz",
         type: "quiz",
         question: "Which LAMP letter is the operating system?",
@@ -77,6 +93,7 @@ export const linuxMissions: Mission[] = [
         items: [
           "I know Linux hosts Apache, PHP, and MySQL as processes.",
           "I can navigate a server with pwd, ls, and mkdir.",
+          "I understand the filesystem structure and important directories.",
         ],
         hint: "Check each statement once you can explain it out loud.",
       },

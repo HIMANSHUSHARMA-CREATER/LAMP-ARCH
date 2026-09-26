@@ -137,7 +137,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   runShell: (command) => {
     const step = currentStep(get());
     const shell = step && step.type === "command" ? step.shell : "bash";
-    const result = runCommand(shell, command, createShellSnapshot());
+    const result = runCommand(shell, command, shellSnapshot);
     shellSnapshot = result.state;
     return result.output;
   },

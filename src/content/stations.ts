@@ -44,10 +44,10 @@ export const STATIONS: StationConfig[] = [
   {
     id: "aws",
     title: "AWS Deploy",
-    subtitle: "Cloud challenges (unlock later)",
+    subtitle: "Cloud deployment",
     position: [0, 0, -16],
     themeColor: "#fb923c",
-    inWorld: false,
+    inWorld: true,
   },
 ];
 

@@ -21,6 +21,14 @@ export const phpMissions: Mission[] = [
     requires: ["php-learn"],
     steps: [
       {
+        id: "php-practice-install",
+        type: "command",
+        shell: "bash",
+        prompt: "Install PHP using apt.",
+        expect: { kind: "includes", value: "apt install php" },
+        hint: "Use: sudo apt install php",
+      },
+      {
         id: "php-practice-version",
         type: "command",
         shell: "php",
@@ -69,8 +77,9 @@ export const phpMissions: Mission[] = [
         items: [
           "PHP can build HTML for Apache to return.",
           "PHP is the usual place to connect to MySQL.",
+          "PHP variables start with $ and are loosely typed.",
         ],
-        hint: "Check both when you can explain a request that uses PHP.",
+        hint: "Check all when you can explain a request that uses PHP.",
       },
     ],
   },
