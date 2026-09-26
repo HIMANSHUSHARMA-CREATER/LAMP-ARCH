@@ -11,6 +11,38 @@ import { StationPad } from "@/components/world/StationPad";
 import { useGameStore } from "@/stores/game-store";
 import type { StationId } from "@/types/game";
 
+const TREE_POSITIONS: [number, number, number, number][] = [
+  [-14, 0, -7, 1.15],
+  [13, 0, -11, 0.9],
+  [-13, 0, 11, 0.85],
+  [14, 0, 8, 1.2],
+  [-4, 0, -14, 0.72],
+  [5, 0, 14, 1.05],
+];
+
+function Tree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position} scale={scale}>
+      <mesh position={[0, 0.16, 0]} receiveShadow>
+        <cylinderGeometry args={[1.05, 1.25, 0.25, 20]} />
+        <meshStandardMaterial color="#786c52" roughness={1} />
+      </mesh>
+      <mesh position={[0, 1.35, 0]} castShadow>
+        <cylinderGeometry args={[0.18, 0.27, 2.35, 10]} />
+        <meshStandardMaterial color="#65503b" roughness={0.95} />
+      </mesh>
+      <mesh position={[0, 2.65, 0]} castShadow>
+        <dodecahedronGeometry args={[1.15, 1]} />
+        <meshStandardMaterial color="#55745b" roughness={0.95} />
+      </mesh>
+      <mesh position={[0.55, 3.05, 0.15]} castShadow>
+        <dodecahedronGeometry args={[0.75, 1]} />
+        <meshStandardMaterial color="#6f8b66" roughness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
 export function Campus() {
   const unlockedStationIds = useGameStore((state) => state.unlockedStationIds);
   const activeStationId = useGameStore((state) => state.activeStationId);
@@ -87,6 +119,10 @@ export function Campus() {
         <cylinderGeometry args={[3.6, 3.6, 0.08, 48]} />
         <meshStandardMaterial color="#8b9698" roughness={0.8} />
       </mesh>
+
+      {TREE_POSITIONS.map(([x, y, z, scale], index) => (
+        <Tree key={index} position={[x, y, z]} scale={scale} />
+      ))}
 
       {WORLD_STATIONS.map((station) => (
         <StationPad

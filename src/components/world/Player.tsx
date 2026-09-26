@@ -117,14 +117,36 @@ export function Player({ target, frozen, onArrive }: PlayerProps) {
 
   return (
     <group ref={groupRef} name="lamp-player" position={[0, 0.45, 6]}>
-      <mesh castShadow>
-        <capsuleGeometry args={[0.28, 0.7, 6, 12]} />
-        <meshStandardMaterial color="#d8dee0" roughness={0.72} metalness={0.08} />
-      </mesh>
-      <mesh position={[0, 0.55, 0.2]} castShadow>
-        <sphereGeometry args={[0.16, 20, 20]} />
-        <meshStandardMaterial color="#2f3b40" roughness={0.8} />
-      </mesh>
+      <group position={[0, 0.05, 0]}>
+        <mesh position={[0, 0.82, 0]} castShadow>
+          <boxGeometry args={[0.46, 0.72, 0.28]} />
+          <meshStandardMaterial color="#31485a" roughness={0.86} />
+        </mesh>
+        <mesh position={[0, 1.38, 0]} castShadow>
+          <sphereGeometry args={[0.24, 20, 16]} />
+          <meshStandardMaterial color="#8f6048" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 1.57, -0.015]} castShadow>
+          <sphereGeometry args={[0.245, 20, 10, 0, Math.PI * 2, 0, Math.PI * 0.52]} />
+          <meshStandardMaterial color="#2f2928" roughness={0.95} />
+        </mesh>
+        <mesh position={[-0.16, 0.82, 0]} rotation={[0, 0, -0.08]} castShadow>
+          <capsuleGeometry args={[0.07, 0.56, 5, 10]} />
+          <meshStandardMaterial color="#8f6048" roughness={0.9} />
+        </mesh>
+        <mesh position={[0.16, 0.82, 0]} rotation={[0, 0, 0.08]} castShadow>
+          <capsuleGeometry args={[0.07, 0.56, 5, 10]} />
+          <meshStandardMaterial color="#8f6048" roughness={0.9} />
+        </mesh>
+        <mesh position={[-0.13, 0.25, 0]} castShadow>
+          <capsuleGeometry args={[0.09, 0.65, 5, 10]} />
+          <meshStandardMaterial color="#202b32" roughness={0.9} />
+        </mesh>
+        <mesh position={[0.13, 0.25, 0]} castShadow>
+          <capsuleGeometry args={[0.09, 0.65, 5, 10]} />
+          <meshStandardMaterial color="#202b32" roughness={0.9} />
+        </mesh>
+      </group>
     </group>
   );
 }
