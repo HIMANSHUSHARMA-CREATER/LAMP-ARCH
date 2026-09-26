@@ -1,36 +1,326 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LAMP Quest
 
-## Getting Started
+An interactive 3D educational platform for learning the LAMP stack (Linux, Apache, MySQL, PHP) through gamified missions and simulated terminal exercises.
 
-First, run the development server:
+## 🎯 Overview
+
+LAMP Quest is an immersive learning experience where users explore a 3D campus, interact with learning stations, complete missions, and earn XP while mastering the fundamentals of web server architecture.
+
+## ✨ Features
+
+- **3D Interactive Campus**: Navigate a virtual campus with clickable learning stations
+- **Progressive Learning**: Learn → Practice → DIY methodology for each technology
+- **Simulated Terminal**: Safe, controlled terminal simulation for practicing commands
+- **XP & Leveling System**: Earn experience points and unlock new content
+- **AI Tutor**: Context-aware AI tutor for hints and explanations (optional)
+- **Complete LAMP Coverage**: Linux, Apache, PHP, MySQL, Integration, and AWS deployment
+- **Final Challenge**: Comprehensive deployment simulation to test all skills
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 16, React 19, TypeScript
+- **3D Graphics**: Three.js, React Three Fiber, @react-three/drei
+- **Styling**: Tailwind CSS 4
+- **State Management**: Zustand
+- **Animations**: Built-in React hooks and CSS transitions
+
+## 📋 Prerequisites
+
+- Node.js 18+ 
+- npm, yarn, pnpm, or bun
+
+## 🚀 Getting Started
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd sdtt-lamp-quest
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
+
+3. **Run the development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   ```
+
+4. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 📖 Development Commands
 
 ```bash
+# Development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Production build
+npm run build
+
+# Start production server
+npm start
+
+# Type checking
+npx tsc --noEmit
+
+# Linting
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🏗️ Project Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+├── app/                    # Next.js app directory
+│   ├── api/tutor/         # AI tutor API route
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx           # Landing page
+│   └── play/              # 3D game page
+├── components/
+│   ├── GameShell.tsx      # Main game container
+│   ├── hud/               # UI components
+│   │   ├── HudChrome.tsx  # XP bar, map strip, mode tabs
+│   │   ├── LearningPanel.tsx
+│   │   └── MissionPanel.tsx
+│   └── world/             # 3D world components
+│       ├── Campus.tsx     # Main 3D scene
+│       ├── CameraRig.tsx  # Camera controller
+│       ├── Player.tsx     # Player character
+│       ├── StationPad.tsx # Interactive stations
+│       └── WorldCanvas.tsx
+├── content/
+│   ├── lessons/           # Educational content
+│   │   ├── linux.ts
+│   │   ├── apache.ts
+│   │   ├── php.ts
+│   │   ├── mysql.ts
+│   │   ├── lamp.ts
+│   │   └── aws.ts
+│   ├── missions/          # Mission definitions
+│   │   ├── linux.ts
+│   │   ├── apache.ts
+│   │   ├── php.ts
+│   │   ├── mysql.ts
+│   │   ├── lamp.ts
+│   │   └── aws.ts
+│   └── stations.ts        # Station configurations
+├── features/
+│   ├── terminal/          # Terminal simulation
+│   │   └── TerminalPanel.tsx
+│   └── tutor/             # AI tutor
+│       └── TutorPanel.tsx
+├── lib/
+│   ├── missions/          # Mission logic
+│   │   └── engine.ts
+│   ├── persist/           # Progress persistence
+│   │   └── progress.ts
+│   ├── progress/          # Progress & unlocks
+│   │   └── unlocks.ts
+│   ├── terminal/          # Terminal simulator
+│   │   └── simulator.ts
+│   └── tutor/             # Tutor implementations
+│       ├── http-tutor.ts
+│       └── mock-tutor.ts
+├── stores/
+│   └── game-store.ts      # Zustand global state
+├── types/
+│   └── game.ts            # TypeScript types
+└── constants/
+    └── stations.ts        # Station order, XP values
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🎮 How the Simulated Terminal Works
 
-## Learn More
+The terminal is a **safe simulation** - it does NOT execute real commands on your system. Instead:
 
-To learn more about Next.js, take a look at the following resources:
+1. **Command Parsing**: Commands are parsed and matched against known patterns
+2. **State Management**: The simulator maintains internal state (files, services, packages)
+3. **Validation**: Commands are validated against expected patterns for missions
+4. **Feedback**: Simulated output is generated based on the command and current state
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Available Bash Commands**:
+- `pwd`, `ls`, `whoami` - Basic navigation
+- `mkdir`, `cd`, `touch`, `cat`, `cp`, `mv`, `rm` - File operations
+- `chmod` - Permissions (simulated)
+- `ps`, `top` - Process viewing
+- `systemctl` - Service management
+- `apt` - Package management
+- `ssh` - Remote connection (simulated)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Shell Flavors**:
+- `bash` - General Linux commands
+- `apache` - Apache-specific commands
+- `php` - PHP CLI simulation
+- `mysql` - MySQL SQL simulation
+- `lamp` - Stack-level commands
 
-## Deploy on Vercel
+## 📊 Progression System
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### XP & Levels
+- **100 XP per level**
+- XP earned by completing missions
+- Progress persists in localStorage
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Unlock System
+- **Linux**: Unlocked by default
+- **Apache**: Unlocked after Linux DIY
+- **PHP**: Unlocked after Apache DIY
+- **MySQL**: Unlocked after PHP DIY
+- **LAMP Hub**: Unlocked after all 4 layer DIYs
+- **AWS**: Unlocked after LAMP DIY
+
+### Mission Types
+- **Learn**: Read educational content (50 XP)
+- **Practice**: Guided exercises (75 XP)
+- **DIY**: Independent challenges (100 XP)
+- **Final Challenge**: Comprehensive test (200 XP)
+
+## 🤖 AI Tutor Configuration
+
+The AI tutor uses OpenAI's API (optional). To enable:
+
+1. Create a `.env.local` file:
+   ```
+   OPENAI_API_KEY=your-api-key-here
+   OPENAI_MODEL=gpt-4o-mini
+   ```
+
+2. The tutor will automatically use the API if configured, falling back to a mock tutor otherwise.
+
+**Note**: Never commit `.env.local` to version control.
+
+## 🔧 Adding New Learning Stations
+
+1. **Add station configuration** in `src/content/stations.ts`:
+   ```typescript
+   {
+     id: "new-station",
+     title: "New Station",
+     subtitle: "Description",
+     position: [x, y, z],
+     themeColor: "#color",
+     inWorld: true,
+   }
+   ```
+
+2. **Create lesson content** in `src/content/lessons/new-station.ts`:
+   ```typescript
+   export const newStationLesson: Lesson = {
+     id: "new-station-lesson",
+     stationId: "new-station",
+     title: "Lesson Title",
+     pages: [...],
+   };
+   ```
+
+3. **Create missions** in `src/content/missions/new-station.ts`:
+   ```typescript
+   export const newStationMissions: Mission[] = [
+     {
+       id: "new-station-learn",
+       stationId: "new-station",
+       mode: "learn",
+       // ...
+     },
+   ];
+   ```
+
+4. **Update exports** in respective `index.ts` files
+
+5. **Add unlock logic** in `src/lib/progress/unlocks.ts`
+
+## 🎨 Adding New 3D Models
+
+The current implementation uses placeholder geometry. To add real 3D models:
+
+1. Place GLB/GLTF files in `public/models/`
+2. Update `StationPad.tsx` to load models:
+   ```typescript
+   import { useGLTF } from "@react-three/drei";
+   
+   const { scene } = useGLTF("/models/station.glb");
+   <primitive object={scene} />
+   ```
+
+3. Ensure models are optimized for web (compressed textures, reasonable polygon count)
+
+## 🧪 Testing
+
+### Manual Testing Checklist
+- [ ] Landing page loads correctly
+- [ ] Progress indicator shows existing progress
+- [ ] "Start Quest" button navigates to 3D world
+- [ ] 3D world loads without errors
+- [ ] WASD movement works
+- [ ] Mouse camera control works (click to lock pointer)
+- [ ] Collision detection prevents walking through stations
+- [ ] "Press E to interact" prompt appears near stations
+- [ ] All stations can be opened
+- [ ] Lessons display correctly with navigation
+- [ ] Terminal accepts commands and shows output
+- [ ] Mission validation works
+- [ ] XP updates correctly
+- [ ] Progress persists after refresh
+- [ ] AI tutor responds (if configured)
+- [ ] Final challenge completion screen shows
+- [ ] No console errors in browser
+
+### Build Verification
+```bash
+npm run build
+npm run lint
+npx tsc --noEmit
+```
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Push to GitHub
+2. Import project in Vercel
+3. Deploy automatically
+
+### Other Platforms
+```bash
+npm run build
+npm start
+```
+
+The build output is in `.next/` and can be deployed to any Node.js hosting platform.
+
+## 🔒 Security Considerations
+
+- **No Real Command Execution**: Terminal is purely simulated
+- **No API Key Exposure**: AI API keys are server-side only
+- **Client-Side Only**: No sensitive data transmission
+- **localStorage Only**: Progress stored locally, no database required
+
+## 📝 License
+
+This project is educational software. Feel free to use and modify for learning purposes.
+
+## 🤝 Contributing
+
+This is an educational project. Suggestions and improvements are welcome!
+
+## 📚 Learning Resources
+
+- [Linux Documentation](https://www.linux.org/docs/)
+- [Apache HTTP Server Documentation](https://httpd.apache.org/docs/)
+- [PHP Manual](https://www.php.net/docs.php)
+- [MySQL Reference Manual](https://dev.mysql.com/doc/)
+- [AWS EC2 Documentation](https://docs.aws.amazon.com/ec2/)
+
+## 🎓 Acknowledgments
+
+Built with modern web technologies to make learning server architecture accessible and engaging.
+# LAMP-ARCH
