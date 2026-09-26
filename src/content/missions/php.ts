@@ -1,0 +1,77 @@
+import type { Mission } from "@/types/game";
+
+export const phpMissions: Mission[] = [
+  {
+    id: "php-learn",
+    stationId: "php",
+    mode: "learn",
+    title: "Meet PHP",
+    summary: "See how server-side scripts build pages.",
+    xp: 50,
+    requires: ["apache-diy"],
+    steps: [{ id: "php-learn-1", type: "read", lessonId: "php-language" }],
+  },
+  {
+    id: "php-practice",
+    stationId: "php",
+    mode: "practice",
+    title: "Run PHP snippets",
+    summary: "Use a simulated PHP CLI.",
+    xp: 75,
+    requires: ["php-learn"],
+    steps: [
+      {
+        id: "php-practice-version",
+        type: "command",
+        shell: "php",
+        prompt: "Print the PHP version.",
+        expect: { kind: "includes", value: "php -v" },
+        hint: "The CLI flag for version is -v.",
+      },
+      {
+        id: "php-practice-echo",
+        type: "command",
+        shell: "php",
+        prompt: "Echo the text LAMP from PHP.",
+        expect: { kind: "includes", value: "echo" },
+        hint: "Try: php -r 'echo \"LAMP\";'",
+      },
+      {
+        id: "php-practice-quiz",
+        type: "quiz",
+        question: "Where does PHP run in LAMP?",
+        choices: ["Only in the browser", "On the server", "Inside MySQL tables", "On the student's laptop GPU"],
+        answer: 1,
+        hint: "Apache invokes PHP before HTML is sent.",
+      },
+    ],
+  },
+  {
+    id: "php-diy",
+    stationId: "php",
+    mode: "diy",
+    title: "A welcome script",
+    summary: "Prove you can produce output Apache could serve.",
+    xp: 100,
+    requires: ["php-practice"],
+    steps: [
+      {
+        id: "php-diy-info",
+        type: "command",
+        shell: "php",
+        prompt: "Run phpinfo in the simulator (type phpinfo).",
+        expect: { kind: "includes", value: "phpinfo" },
+        hint: "Type phpinfo — the simulator prints a short config summary.",
+      },
+      {
+        id: "php-diy-checklist",
+        type: "checklist",
+        items: [
+          "PHP can build HTML for Apache to return.",
+          "PHP is the usual place to connect to MySQL.",
+        ],
+        hint: "Check both when you can explain a request that uses PHP.",
+      },
+    ],
+  },
+];
