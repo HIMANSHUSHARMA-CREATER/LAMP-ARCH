@@ -63,29 +63,29 @@ export function Campus() {
 
   return (
     <>
-      <color attach="background" args={["#020617"]} />
-      <fog attach="fog" args={["#020617", 18, 48]} />
-      <ambientLight intensity={0.45} />
-      <directionalLight position={[8, 14, 6]} intensity={1.15} castShadow />
-      <hemisphereLight args={["#1e3a5f", "#020617", 0.4]} />
+      <color attach="background" args={["#b8c4c7"]} />
+      <fog attach="fog" args={["#b8c4c7", 22, 58]} />
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[-10, 18, 8]} intensity={2.2} castShadow shadow-mapSize={[2048, 2048]} />
+      <hemisphereLight args={["#dce8ec", "#536066", 1.1]} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#0b1220" />
+        <meshStandardMaterial color="#596367" roughness={0.92} />
       </mesh>
       <Grid
         infiniteGrid
-        fadeDistance={42}
-        fadeStrength={4}
-        cellSize={1}
-        sectionSize={5}
-        cellColor="#1e293b"
-        sectionColor="#334155"
-        position={[0, 0.01, 0]}
+        fadeDistance={46}
+        fadeStrength={1.4}
+        cellSize={2}
+        sectionSize={10}
+        cellColor="#697579"
+        sectionColor="#454f53"
+        position={[0, 0.015, 0]}
       />
-      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[3.2, 3.55, 48]} />
-        <meshStandardMaterial color="#34d399" emissive="#34d399" emissiveIntensity={0.4} />
+      <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[3.6, 3.6, 0.08, 48]} />
+        <meshStandardMaterial color="#8b9698" roughness={0.8} />
       </mesh>
 
       {WORLD_STATIONS.map((station) => (

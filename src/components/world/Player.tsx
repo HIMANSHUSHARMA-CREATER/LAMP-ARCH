@@ -118,12 +118,12 @@ export function Player({ target, frozen, onArrive }: PlayerProps) {
   return (
     <group ref={groupRef} name="lamp-player" position={[0, 0.45, 6]}>
       <mesh castShadow>
-        <capsuleGeometry args={[0.28, 0.7, 4, 8]} />
-        <meshStandardMaterial color="#e2e8f0" emissive="#38bdf8" emissiveIntensity={0.2} />
+        <capsuleGeometry args={[0.28, 0.7, 6, 12]} />
+        <meshStandardMaterial color="#d8dee0" roughness={0.72} metalness={0.08} />
       </mesh>
-      <mesh position={[0, 0.55, 0.2]}>
-        <sphereGeometry args={[0.16, 16, 16]} />
-        <meshStandardMaterial color="#0f172a" />
+      <mesh position={[0, 0.55, 0.2]} castShadow>
+        <sphereGeometry args={[0.16, 20, 20]} />
+        <meshStandardMaterial color="#2f3b40" roughness={0.8} />
       </mesh>
     </group>
   );

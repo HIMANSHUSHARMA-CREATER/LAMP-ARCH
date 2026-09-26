@@ -14,7 +14,7 @@ type StationPadProps = {
 export function StationPad({ station, unlocked, active, onSelect }: StationPadProps) {
   const [hovered, setHovered] = useState(false);
   const color = station.themeColor;
-  const emissiveIntensity = !unlocked ? 0.05 : active || hovered ? 1.1 : 0.45;
+  const emissiveIntensity = !unlocked ? 0 : active || hovered ? 0.12 : 0.04;
 
   return (
     <group position={station.position}>
@@ -39,21 +39,22 @@ export function StationPad({ station, unlocked, active, onSelect }: StationPadPr
       >
         <circleGeometry args={[2.2, 32]} />
         <meshStandardMaterial
-          color={unlocked ? color : "#334155"}
-          emissive={unlocked ? color : "#1e293b"}
+          color={unlocked ? "#7d898b" : "#4d5659"}
+          emissive={unlocked ? color : "#000000"}
           emissiveIntensity={emissiveIntensity}
           transparent
-          opacity={unlocked ? 0.9 : 0.4}
+          opacity={unlocked ? 0.72 : 0.5}
+          roughness={0.82}
         />
       </mesh>
       <mesh position={[0, 1.1, 0]} castShadow>
         <boxGeometry args={[1.4, 2.2, 1.4]} />
         <meshStandardMaterial
-          color={unlocked ? color : "#1e293b"}
-          emissive={unlocked ? color : "#020617"}
-          emissiveIntensity={unlocked ? 0.25 : 0}
-          metalness={0.2}
-          roughness={0.45}
+          color={unlocked ? "#3f4a4c" : "#252b2d"}
+          emissive={unlocked ? color : "#000000"}
+          emissiveIntensity={unlocked ? 0.05 : 0}
+          metalness={0.28}
+          roughness={0.62}
         />
       </mesh>
       <Html position={[0, 2.6, 0]} center distanceFactor={18}>
