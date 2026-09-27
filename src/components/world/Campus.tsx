@@ -91,6 +91,19 @@ export function Campus() {
   const playerPos = useRef(new THREE.Vector3(0, 0.45, 6));
   const frozen = panel !== "none";
 
+  useEffect(() => {
+    const handleTravel = (event: Event) => {
+      const stationId = (event as CustomEvent<{ stationId?: StationId }>).detail?.stationId;
+      const station = WORLD_STATIONS.find((candidate) => candidate.id === stationId);
+      if (!station || !unlockedStationIds.includes(station.id)) return;
+      pendingStation.current = station.id;
+      setWalkTarget(station.position);
+    };
+
+    window.addEventListener("lampquest:travel", handleTravel);
+    return () => window.removeEventListener("lampquest:travel", handleTravel);
+  }, [unlockedStationIds]);
+
   useFrame(({ scene }) => {
     const player = scene.getObjectByName("lamp-player");
     if (player) {

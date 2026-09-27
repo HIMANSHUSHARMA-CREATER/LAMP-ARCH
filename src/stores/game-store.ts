@@ -82,10 +82,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   openStation: (id) => {
-    const { unlockedStationIds } = get();
-    if (!unlockedStationIds.includes(id)) return;
-    const modes = get().unlockedModes[id] ?? [];
-    const mode = modes.includes("learn") ? "learn" : modes[0];
+    const state = get();
+    if (!state.unlockedStationIds.includes(id)) return;
+    const modes = state.unlockedModes[id] ?? [];
+    const mode = (["learn", "practice", "diy"] as LearningMode[]).find(
+      (candidate) => modes.includes(candidate) && !state.completedMissionIds.includes(`${id}-${candidate}`),
+    ) ?? modes[modes.length - 1];
     if (!mode) return;
     const mission = getMissionFor(id, mode);
     set({
