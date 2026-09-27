@@ -4,15 +4,19 @@ import { useState } from "react";
 import { LearningPanel } from "@/components/hud/LearningPanel";
 import { ModeTabs, StationChip } from "@/components/hud/HudChrome";
 import { getMission } from "@/content/missions";
+import { STATION_ORDER } from "@/constants/stations";
 import { TerminalPanel } from "@/features/terminal/TerminalPanel";
 import { useGameStore } from "@/stores/game-store";
 
 export function MissionPanel() {
+  const activeStationId = useGameStore((state) => state.activeStationId);
   const activeMissionId = useGameStore((state) => state.activeMissionId);
   const currentStepIndex = useGameStore((state) => state.currentStepIndex);
   const completedMissionIds = useGameStore((state) => state.completedMissionIds);
   const xp = useGameStore((state) => state.xp);
   const closePanel = useGameStore((state) => state.closePanel);
+  const openStation = useGameStore((state) => state.openStation);
+  const unlockedStationIds = useGameStore((state) => state.unlockedStationIds);
   const submitCommand = useGameStore((state) => state.submitCommand);
   const submitQuiz = useGameStore((state) => state.submitQuiz);
   const submitChecklist = useGameStore((state) => state.submitChecklist);
@@ -23,6 +27,10 @@ export function MissionPanel() {
   const step = mission?.steps[currentStepIndex];
   const complete = Boolean(mission && currentStepIndex >= mission.steps.length);
   const isFinalComplete = completedMissionIds.includes("lamp-final");
+  const nextStation = activeStationId
+    ? STATION_ORDER[STATION_ORDER.indexOf(activeStationId) + 1]
+    : undefined;
+  const canOpenNextStation = Boolean(nextStation && unlockedStationIds.includes(nextStation));
 
   if (!mission) return null;
 
@@ -148,8 +156,17 @@ export function MissionPanel() {
               <p className="font-bold text-emerald-300 text-lg">Mission Complete</p>
             </div>
             <p className="text-sm text-emerald-100/90">
-              You earned <span className="font-bold text-emerald-300">{mission.xp} XP</span>. Open the next tab when it unlocks, or walk to a newly lit station.
+              You earned <span className="font-bold text-emerald-300">{mission.xp} XP</span>. Your next station is now available on the campus map.
             </p>
+            {canOpenNextStation && nextStation ? (
+              <button
+                type="button"
+                onClick={() => openStation(nextStation)}
+                className="mt-4 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-400"
+              >
+                Continue to {nextStation === "lamp" ? "LAMP Hub" : nextStation === "aws" ? "AWS Deploy" : `${nextStation[0].toUpperCase()}${nextStation.slice(1)}`} →
+              </button>
+            ) : null}
           </div>
         </div>
       ) : step?.type === "read" ? (

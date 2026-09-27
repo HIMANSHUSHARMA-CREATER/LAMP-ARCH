@@ -1,6 +1,6 @@
 "use client";
 
-import { Grid, Html } from "@react-three/drei";
+import { Grid, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -10,6 +10,75 @@ import { Player } from "@/components/world/Player";
 import { StationPad } from "@/components/world/StationPad";
 import { useGameStore } from "@/stores/game-store";
 import type { StationId } from "@/types/game";
+
+const TREE_POSITIONS: [number, number, number, number][] = [
+  [-14, 0, -7, 1.15],
+  [13, 0, -11, 0.9],
+  [-13, 0, 11, 0.85],
+  [14, 0, 8, 1.2],
+  [-4, 0, -14, 0.72],
+  [5, 0, 14, 1.05],
+];
+
+function Tree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position} scale={scale}>
+      <mesh position={[0, 0.16, 0]} receiveShadow>
+        <cylinderGeometry args={[1.05, 1.25, 0.25, 20]} />
+        <meshStandardMaterial color="#786c52" roughness={1} />
+      </mesh>
+      <mesh position={[0, 1.35, 0]} castShadow>
+        <cylinderGeometry args={[0.18, 0.27, 2.35, 10]} />
+        <meshStandardMaterial color="#65503b" roughness={0.95} />
+      </mesh>
+      <mesh position={[0, 2.65, 0]} castShadow>
+        <dodecahedronGeometry args={[1.15, 1]} />
+        <meshStandardMaterial color="#55745b" roughness={0.95} />
+      </mesh>
+      <mesh position={[0.55, 3.05, 0.15]} castShadow>
+        <dodecahedronGeometry args={[0.75, 1]} />
+        <meshStandardMaterial color="#6f8b66" roughness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
+function Road({ rotation = 0, position = [0, 0.07, 0] }: { rotation?: number; position?: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[3.8, 46]} />
+        <meshStandardMaterial color="#555b5d" roughness={0.94} />
+      </mesh>
+      <mesh position={[-1.35, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.08, 46]} />
+        <meshStandardMaterial color="#b9ae86" roughness={0.9} />
+      </mesh>
+      <mesh position={[1.35, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.08, 46]} />
+        <meshStandardMaterial color="#b9ae86" roughness={0.9} />
+      </mesh>
+      {[-18, -10, -2, 6, 14, 22].map((z) => (
+        <mesh key={z} position={[0, 0.018, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.12, 3.2]} />
+          <meshStandardMaterial color="#d8c98e" roughness={0.8} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Sun() {
+  return (
+    <group position={[-18, 18, -22]}>
+      <mesh>
+        <sphereGeometry args={[2.4, 32, 20]} />
+        <meshBasicMaterial color="#fff1bd" />
+      </mesh>
+      <pointLight intensity={8} distance={80} color="#ffe7b0" />
+    </group>
+  );
+}
 
 export function Campus() {
   const unlockedStationIds = useGameStore((state) => state.unlockedStationIds);
@@ -63,30 +132,42 @@ export function Campus() {
 
   return (
     <>
-      <color attach="background" args={["#020617"]} />
-      <fog attach="fog" args={["#020617", 18, 48]} />
-      <ambientLight intensity={0.45} />
-      <directionalLight position={[8, 14, 6]} intensity={1.15} castShadow />
-      <hemisphereLight args={["#1e3a5f", "#020617", 0.4]} />
+      <color attach="background" args={["#b8c4c7"]} />
+      <fog attach="fog" args={["#b8c4c7", 22, 58]} />
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[-10, 18, 8]} intensity={2.2} castShadow shadow-mapSize={[2048, 2048]} />
+      <hemisphereLight args={["#dce8ec", "#536066", 1.1]} />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#0b1220" />
+        <meshStandardMaterial color="#c7a15d" roughness={1} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
+        <planeGeometry args={[72, 72]} />
+        <meshStandardMaterial color="#d9b873" roughness={1} />
       </mesh>
       <Grid
         infiniteGrid
-        fadeDistance={42}
-        fadeStrength={4}
-        cellSize={1}
-        sectionSize={5}
-        cellColor="#1e293b"
-        sectionColor="#334155"
-        position={[0, 0.01, 0]}
+        fadeDistance={46}
+        fadeStrength={0.45}
+        cellSize={2}
+        sectionSize={10}
+        cellColor="#c8a96d"
+        sectionColor="#b59255"
+        position={[0, 0.018, 0]}
       />
-      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[3.2, 3.55, 48]} />
-        <meshStandardMaterial color="#34d399" emissive="#34d399" emissiveIntensity={0.4} />
+      <Sun />
+      <Road rotation={0} position={[0, 0, 0]} />
+      <Road rotation={Math.PI / 2} position={[0, 0, 0]} />
+
+      <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[3.6, 3.6, 0.08, 48]} />
+        <meshStandardMaterial color="#8b9698" roughness={0.8} />
       </mesh>
+
+      {TREE_POSITIONS.map(([x, y, z, scale], index) => (
+        <Tree key={index} position={[x, y, z]} scale={scale} />
+      ))}
 
       {WORLD_STATIONS.map((station) => (
         <StationPad
@@ -102,11 +183,17 @@ export function Campus() {
       ))}
 
       {nearbyStation && !frozen && (
-        <Html position={[playerPos.current.x, 2, playerPos.current.z]} center distanceFactor={15}>
-          <div className="rounded-lg bg-cyan-400/90 px-4 py-2 text-sm font-semibold text-slate-950 animate-pulse">
-            Press E to interact
-          </div>
-        </Html>
+        <Text
+          position={[playerPos.current.x, 2, playerPos.current.z]}
+          fontSize={0.28}
+          color="#f4d58b"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.04}
+          outlineColor="#283033"
+        >
+          Press E to interact
+        </Text>
       )}
 
       <Player

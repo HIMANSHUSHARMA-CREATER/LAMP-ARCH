@@ -57,7 +57,10 @@ export function deriveUnlocks(completedMissionIds: string[]): Pick<
       addMode(unlockedModes[station], "diy");
     }
 
-    if (completed.has(missionIdFor(station, "diy"))) {
+    if (
+      completed.has(missionIdFor(station, "learn")) ||
+      completed.has(missionIdFor(station, "diy"))
+    ) {
       const next = STATION_ORDER[STATION_ORDER.indexOf(station) + 1];
       if (next && !unlockedStationIds.includes(next)) {
         if (next === "lamp" && !fourLayerDiys) {
