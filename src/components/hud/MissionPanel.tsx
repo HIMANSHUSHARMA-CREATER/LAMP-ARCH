@@ -16,6 +16,7 @@ export function MissionPanel() {
   const xp = useGameStore((state) => state.xp);
   const closePanel = useGameStore((state) => state.closePanel);
   const unlockedStationIds = useGameStore((state) => state.unlockedStationIds);
+  const unlockedModes = useGameStore((state) => state.unlockedModes);
   const submitCommand = useGameStore((state) => state.submitCommand);
   const submitQuiz = useGameStore((state) => state.submitQuiz);
   const submitChecklist = useGameStore((state) => state.submitChecklist);
@@ -26,14 +27,31 @@ export function MissionPanel() {
   const step = mission?.steps[currentStepIndex];
   const complete = Boolean(mission && currentStepIndex >= mission.steps.length);
   const isFinalComplete = completedMissionIds.includes("lamp-final");
-  const nextStation = activeStationId
-    ? STATION_ORDER[STATION_ORDER.indexOf(activeStationId) + 1]
+  const nextMode = activeStationId
+    ? (["learn", "practice", "diy"] as const).find(
+        (mode) => unlockedModes[activeStationId]?.includes(mode) && !completedMissionIds.includes(`${activeStationId}-${mode}`),
+      )
     : undefined;
-  const canOpenNextStation = Boolean(nextStation && unlockedStationIds.includes(nextStation));
-  const nextStationLabel = nextStation === "lamp" ? "LAMP Hub" : nextStation === "aws" ? "AWS Deploy" : nextStation ? `${nextStation[0].toUpperCase()}${nextStation.slice(1)}` : "next phase";
+  const nextStation = activeStationId
+    ? STATION_ORDER.slice(STATION_ORDER.indexOf(activeStationId) + 1).find((station) => unlockedStationIds.includes(station))
+    : undefined;
+  const destinationStation = nextMode ? activeStationId : nextStation;
+  const canOpenNextStation = Boolean(destinationStation);
+  const nextStationLabel = nextMode
+    ? `${activeStationId} ${nextMode}`
+    : nextStation === "lamp"
+      ? "LAMP Hub"
+      : nextStation === "aws"
+        ? "AWS Deploy"
+        : nextStation
+          ? `${nextStation[0].toUpperCase()}${nextStation.slice(1)}`
+          : "the campus";
   const exitToHomeAndTravel = () => {
-    if (!nextStation) return closePanel();
-    window.dispatchEvent(new CustomEvent("lampquest:travel", { detail: { stationId: nextStation } }));
+    if (!destinationStation) {
+      closePanel();
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("lampquest:travel", { detail: { stationId: destinationStation } }));
     closePanel();
   };
 
