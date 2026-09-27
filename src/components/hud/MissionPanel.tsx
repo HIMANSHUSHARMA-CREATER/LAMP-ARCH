@@ -15,7 +15,6 @@ export function MissionPanel() {
   const completedMissionIds = useGameStore((state) => state.completedMissionIds);
   const xp = useGameStore((state) => state.xp);
   const closePanel = useGameStore((state) => state.closePanel);
-  const openStation = useGameStore((state) => state.openStation);
   const unlockedStationIds = useGameStore((state) => state.unlockedStationIds);
   const submitCommand = useGameStore((state) => state.submitCommand);
   const submitQuiz = useGameStore((state) => state.submitQuiz);
@@ -31,6 +30,12 @@ export function MissionPanel() {
     ? STATION_ORDER[STATION_ORDER.indexOf(activeStationId) + 1]
     : undefined;
   const canOpenNextStation = Boolean(nextStation && unlockedStationIds.includes(nextStation));
+  const nextStationLabel = nextStation === "lamp" ? "LAMP Hub" : nextStation === "aws" ? "AWS Deploy" : nextStation ? `${nextStation[0].toUpperCase()}${nextStation.slice(1)}` : "next phase";
+  const exitToHomeAndTravel = () => {
+    if (!nextStation) return closePanel();
+    window.dispatchEvent(new CustomEvent("lampquest:travel", { detail: { stationId: nextStation } }));
+    closePanel();
+  };
 
   if (!mission) return null;
 
@@ -161,10 +166,10 @@ export function MissionPanel() {
             {canOpenNextStation && nextStation ? (
               <button
                 type="button"
-                onClick={() => openStation(nextStation)}
+                onClick={exitToHomeAndTravel}
                 className="mt-4 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-400"
               >
-                Continue to {nextStation === "lamp" ? "LAMP Hub" : nextStation === "aws" ? "AWS Deploy" : `${nextStation[0].toUpperCase()}${nextStation.slice(1)}`} →
+                Exit to Home → Travel to {nextStationLabel}
               </button>
             ) : null}
           </div>
