@@ -1,6 +1,6 @@
 "use client";
 
-import { Grid, Text } from "@react-three/drei";
+import { Grid, Sky, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -50,13 +50,17 @@ function Road({ rotation = 0, position = [0, 0.07, 0] }: { rotation?: number; po
         <planeGeometry args={[3.8, 46]} />
         <meshStandardMaterial color="#555b5d" roughness={0.94} />
       </mesh>
-      <mesh position={[-1.35, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.08, 46]} />
-        <meshStandardMaterial color="#b9ae86" roughness={0.9} />
+      <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[4.5, 46]} />
+        <meshStandardMaterial color="#9c8d6d" roughness={1} />
       </mesh>
-      <mesh position={[1.35, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.08, 46]} />
-        <meshStandardMaterial color="#b9ae86" roughness={0.9} />
+      <mesh position={[-1.88, 0.02, 0]}>
+        <boxGeometry args={[0.16, 0.12, 46]} />
+        <meshStandardMaterial color="#a7abad" roughness={0.9} />
+      </mesh>
+      <mesh position={[1.88, 0.02, 0]}>
+        <boxGeometry args={[0.16, 0.12, 46]} />
+        <meshStandardMaterial color="#a7abad" roughness={0.9} />
       </mesh>
       {[-18, -10, -2, 6, 14, 22].map((z) => (
         <mesh key={z} position={[0, 0.018, z]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -64,6 +68,33 @@ function Road({ rotation = 0, position = [0, 0.07, 0] }: { rotation?: number; po
           <meshStandardMaterial color="#d8c98e" roughness={0.8} />
         </mesh>
       ))}
+    </group>
+  );
+}
+
+function Mountain({ position, scale, color }: { position: [number, number, number]; scale: [number, number, number]; color: string }) {
+  return (
+    <group position={position} scale={scale}>
+      <mesh castShadow receiveShadow>
+        <coneGeometry args={[5.5, 9, 9]} />
+        <meshStandardMaterial color={color} roughness={1} flatShading />
+      </mesh>
+      <mesh position={[0.1, 3.2, 0.05]} rotation={[0, 0, Math.PI]}>
+        <coneGeometry args={[1.65, 2.1, 7]} />
+        <meshStandardMaterial color="#d8d2c2" roughness={1} flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+function MountainRange() {
+  return (
+    <group>
+      <Mountain position={[-22, 2, -30]} scale={[1.8, 1.1, 1.2]} color="#687477" />
+      <Mountain position={[-10, 1, -34]} scale={[1.45, 0.85, 1]} color="#7b8584" />
+      <Mountain position={[5, 2, -32]} scale={[2.1, 1.25, 1.3]} color="#657171" />
+      <Mountain position={[20, 1, -29]} scale={[1.7, 0.9, 1.1]} color="#78817f" />
+      <Mountain position={[29, 2, -18]} scale={[1.3, 0.8, 1]} color="#626d6d" />
     </group>
   );
 }
@@ -145,8 +176,9 @@ export function Campus() {
 
   return (
     <>
-      <color attach="background" args={["#b8c4c7"]} />
-      <fog attach="fog" args={["#b8c4c7", 22, 58]} />
+      <color attach="background" args={["#9fc7df"]} />
+      <fog attach="fog" args={["#9fc7df", 28, 72]} />
+      <Sky distance={450000} sunPosition={[-18, 18, -22]} turbidity={7} rayleigh={1.5} mieCoefficient={0.004} mieDirectionalG={0.82} />
       <ambientLight intensity={0.7} />
       <directionalLight position={[-10, 18, 8]} intensity={2.2} castShadow shadow-mapSize={[2048, 2048]} />
       <hemisphereLight args={["#dce8ec", "#536066", 1.1]} />
@@ -170,6 +202,7 @@ export function Campus() {
         position={[0, 0.018, 0]}
       />
       <Sun />
+      <MountainRange />
       <Road rotation={0} position={[0, 0, 0]} />
       <Road rotation={Math.PI / 2} position={[0, 0, 0]} />
 
