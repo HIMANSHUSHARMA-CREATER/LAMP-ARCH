@@ -1,112 +1,141 @@
 "use client";
 
-import { Grid, Sky, Text } from "@react-three/drei";
+import { Billboard, Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { WORLD_STATIONS } from "@/content/stations";
+import { Atmosphere } from "@/components/world/Atmosphere";
 import { CameraRig } from "@/components/world/CameraRig";
-import { Player } from "@/components/world/Player";
+import { Crystals } from "@/components/world/Crystals";
+import { Player, STATION_OBSTACLES, type Obstacle, type WalkRequest } from "@/components/world/Player";
 import { StationPad } from "@/components/world/StationPad";
+import { Terrain } from "@/components/world/Terrain";
+import { isTypingTarget, playerState } from "@/lib/world/runtime";
 import { useGameStore } from "@/stores/game-store";
 import type { StationId } from "@/types/game";
 
-const TREE_POSITIONS: [number, number, number, number][] = [
-  [-14, 0, -7, 1.15],
-  [13, 0, -11, 0.9],
-  [-13, 0, 11, 0.85],
-  [14, 0, 8, 1.2],
-  [-4, 0, -14, 0.72],
-  [5, 0, 14, 1.05],
+const ROAD_LENGTH = 48;
+const INTERACT_DISTANCE = 4.5;
+
+const TREE_POSITIONS: [number, number, number][] = [
+  [-14, -7, 1.15],
+  [13, -11, 0.9],
+  [-13, 11, 0.85],
+  [14, 8, 1.2],
+  [-4, -14, 0.72],
+  [5, 14, 1.05],
+  [-19, 3, 1.1],
+  [20, -4, 0.95],
+  [-6, 21, 1.0],
+  [7, -21, 1.1],
 ];
 
-function Tree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+const LAMP_POSTS: [number, number][] = [-21, -13, 13, 21].flatMap((offset) => [
+  [2.75, offset],
+  [-2.75, offset],
+  [offset, 2.75],
+  [offset, -2.75],
+]) as [number, number][];
+
+function CampusTree({ position, scale }: { position: [number, number, number]; scale: number }) {
+  const clusters: [number, number, number, number, string][] = [
+    [0, 2.9, 0, 1.25, "#4c7a3d"],
+    [0.75, 3.25, 0.25, 0.85, "#5f8c45"],
+    [-0.7, 3.1, -0.2, 0.9, "#426d36"],
+    [0.1, 3.75, -0.35, 0.8, "#6a9a4c"],
+    [-0.25, 3.35, 0.7, 0.75, "#527f3e"],
+  ];
   return (
     <group position={position} scale={scale}>
-      <mesh position={[0, 0.16, 0]} receiveShadow>
-        <cylinderGeometry args={[1.05, 1.25, 0.25, 20]} />
-        <meshStandardMaterial color="#786c52" roughness={1} />
+      <mesh position={[0, 1.2, 0]} castShadow>
+        <cylinderGeometry args={[0.16, 0.28, 2.4, 9]} />
+        <meshStandardMaterial color="#5e4632" roughness={1} />
       </mesh>
-      <mesh position={[0, 1.35, 0]} castShadow>
-        <cylinderGeometry args={[0.18, 0.27, 2.35, 10]} />
-        <meshStandardMaterial color="#65503b" roughness={0.95} />
+      <mesh position={[0.3, 2.1, 0]} rotation={[0, 0, -0.7]} castShadow>
+        <cylinderGeometry args={[0.06, 0.1, 1, 6]} />
+        <meshStandardMaterial color="#5e4632" roughness={1} />
       </mesh>
-      <mesh position={[0, 2.65, 0]} castShadow>
-        <dodecahedronGeometry args={[1.15, 1]} />
-        <meshStandardMaterial color="#55745b" roughness={0.95} />
-      </mesh>
-      <mesh position={[0.55, 3.05, 0.15]} castShadow>
-        <dodecahedronGeometry args={[0.75, 1]} />
-        <meshStandardMaterial color="#6f8b66" roughness={0.95} />
-      </mesh>
-    </group>
-  );
-}
-
-function Road({ rotation = 0, position = [0, 0.07, 0] }: { rotation?: number; position?: [number, number, number] }) {
-  return (
-    <group position={position} rotation={[0, rotation, 0]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[3.8, 46]} />
-        <meshStandardMaterial color="#555b5d" roughness={0.94} />
-      </mesh>
-      <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[4.5, 46]} />
-        <meshStandardMaterial color="#9c8d6d" roughness={1} />
-      </mesh>
-      <mesh position={[-1.88, 0.02, 0]}>
-        <boxGeometry args={[0.16, 0.12, 46]} />
-        <meshStandardMaterial color="#a7abad" roughness={0.9} />
-      </mesh>
-      <mesh position={[1.88, 0.02, 0]}>
-        <boxGeometry args={[0.16, 0.12, 46]} />
-        <meshStandardMaterial color="#a7abad" roughness={0.9} />
-      </mesh>
-      {[-18, -10, -2, 6, 14, 22].map((z) => (
-        <mesh key={z} position={[0, 0.018, z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.12, 3.2]} />
-          <meshStandardMaterial color="#d8c98e" roughness={0.8} />
+      {clusters.map(([x, y, z, r, color], index) => (
+        <mesh key={index} position={[x, y, z]} castShadow receiveShadow>
+          <icosahedronGeometry args={[r, 1]} />
+          <meshStandardMaterial color={color} roughness={0.9} flatShading />
         </mesh>
       ))}
     </group>
   );
 }
 
-function Mountain({ position, scale, color }: { position: [number, number, number]; scale: [number, number, number]; color: string }) {
+function Road({ rotation }: { rotation: number }) {
   return (
-    <group position={position} scale={scale}>
-      <mesh castShadow receiveShadow>
-        <coneGeometry args={[5.5, 9, 9]} />
-        <meshStandardMaterial color={color} roughness={1} flatShading />
+    <group rotation={[0, rotation, 0]}>
+      <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[5.2, ROAD_LENGTH]} />
+        <meshStandardMaterial color="#b3aea4" roughness={0.95} />
       </mesh>
-      <mesh position={[0.1, 3.2, 0.05]} rotation={[0, 0, Math.PI]}>
-        <coneGeometry args={[1.65, 2.1, 7]} />
-        <meshStandardMaterial color="#d8d2c2" roughness={1} flatShading />
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[3.8, ROAD_LENGTH]} />
+        <meshStandardMaterial color="#3f4447" roughness={0.92} />
+      </mesh>
+      {[-1.95, 1.95].map((x) => (
+        <mesh key={x} position={[x, 0.06, 0]} receiveShadow>
+          <boxGeometry args={[0.14, 0.1, ROAD_LENGTH]} />
+          <meshStandardMaterial color="#c9c6bf" roughness={0.9} />
+        </mesh>
+      ))}
+      {Array.from({ length: 12 }, (_, index) => -22 + index * 4).map((z) => (
+        <mesh key={z} position={[0, 0.026, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.12, 2]} />
+          <meshStandardMaterial color="#e9dfae" roughness={0.7} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function LampPost({ position, night }: { position: [number, number]; night: boolean }) {
+  return (
+    <group position={[position[0], 0, position[1]]}>
+      <mesh position={[0, 1.5, 0]} castShadow>
+        <cylinderGeometry args={[0.05, 0.08, 3, 8]} />
+        <meshStandardMaterial color="#2f3438" metalness={0.6} roughness={0.4} />
+      </mesh>
+      <mesh position={[0, 3.05, 0]}>
+        <sphereGeometry args={[0.17, 12, 10]} />
+        <meshStandardMaterial color="#fff6d8" emissive="#ffd38a" emissiveIntensity={night ? 3 : 0.15} />
       </mesh>
     </group>
   );
 }
 
-function MountainRange() {
+function Plaza() {
   return (
     <group>
-      <Mountain position={[-22, 2, -30]} scale={[1.8, 1.1, 1.2]} color="#687477" />
-      <Mountain position={[-10, 1, -34]} scale={[1.45, 0.85, 1]} color="#7b8584" />
-      <Mountain position={[5, 2, -32]} scale={[2.1, 1.25, 1.3]} color="#657171" />
-      <Mountain position={[20, 1, -29]} scale={[1.7, 0.9, 1.1]} color="#78817f" />
-      <Mountain position={[29, 2, -18]} scale={[1.3, 0.8, 1]} color="#626d6d" />
+      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[4.4, 64]} />
+        <meshStandardMaterial color="#9aa0a2" roughness={0.85} />
+      </mesh>
+      <mesh position={[0, 0.033, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[4.1, 4.4, 64]} />
+        <meshStandardMaterial color="#6e7476" roughness={0.85} />
+      </mesh>
     </group>
   );
 }
 
-function Sun() {
+function InteractPrompt({ visible }: { visible: boolean }) {
+  const group = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (!group.current) return;
+    group.current.position.set(playerState.position.x, playerState.position.y + 2.6, playerState.position.z);
+  });
   return (
-    <group position={[-18, 18, -22]}>
-      <mesh>
-        <sphereGeometry args={[2.4, 32, 20]} />
-        <meshBasicMaterial color="#fff1bd" />
-      </mesh>
-      <pointLight intensity={8} distance={80} color="#ffe7b0" />
+    <group ref={group} visible={visible}>
+      <Billboard>
+        <Text fontSize={0.3} color="#fde68a" anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#111827">
+          Press E to enter
+        </Text>
+      </Billboard>
     </group>
   );
 }
@@ -116,103 +145,86 @@ export function Campus() {
   const activeStationId = useGameStore((state) => state.activeStationId);
   const panel = useGameStore((state) => state.panel);
   const openStation = useGameStore((state) => state.openStation);
-  const [walkTarget, setWalkTarget] = useState<[number, number, number] | null>(null);
+  const timeOfDay = useGameStore((state) => state.timeOfDay);
+  const [walkRequest, setWalkRequest] = useState<WalkRequest | null>(null);
   const [nearbyStation, setNearbyStation] = useState<StationId | null>(null);
-  const pendingStation = useRef<StationId | null>(null);
-  const playerPos = useRef(new THREE.Vector3(0, 0.45, 6));
+  const nearbyRef = useRef<StationId | null>(null);
+  const requestCounter = useRef(0);
   const frozen = panel !== "none";
+  const night = timeOfDay === "night";
+
+  const obstacles = useMemo<Obstacle[]>(
+    () => [
+      ...STATION_OBSTACLES,
+      ...TREE_POSITIONS.map(([x, z]) => ({ x, z, radius: 0.6 })),
+      ...LAMP_POSTS.map(([x, z]) => ({ x, z, radius: 0.25 })),
+    ],
+    [],
+  );
+
+  const walkTo = useCallback(
+    (stationId: StationId) => {
+      const station = WORLD_STATIONS.find((candidate) => candidate.id === stationId);
+      if (!station || !unlockedStationIds.includes(station.id)) return;
+      requestCounter.current += 1;
+      setWalkRequest({ id: requestCounter.current, stationId, position: station.position });
+    },
+    [unlockedStationIds],
+  );
 
   useEffect(() => {
     const handleTravel = (event: Event) => {
       const stationId = (event as CustomEvent<{ stationId?: StationId }>).detail?.stationId;
-      const station = WORLD_STATIONS.find((candidate) => candidate.id === stationId);
-      if (!station || !unlockedStationIds.includes(station.id)) return;
-      pendingStation.current = station.id;
-      setWalkTarget(station.position);
+      if (stationId) walkTo(stationId);
     };
-
     window.addEventListener("lampquest:travel", handleTravel);
     return () => window.removeEventListener("lampquest:travel", handleTravel);
-  }, [unlockedStationIds]);
-
-  useFrame(({ scene }) => {
-    const player = scene.getObjectByName("lamp-player");
-    if (player) {
-      playerPos.current.copy(player.position);
-    }
-
-    if (frozen) return;
-
-    let closestStation: StationId | null = null;
-    let closestDistance = Infinity;
-
-    WORLD_STATIONS.forEach((station) => {
-      if (!unlockedStationIds.includes(station.id)) return;
-      const stationPos = new THREE.Vector3(...station.position);
-      const distance = playerPos.current.distanceTo(stationPos);
-      if (distance < 4 && distance < closestDistance) {
-        closestDistance = distance;
-        closestStation = station.id;
-      }
-    });
-
-    setNearbyStation(closestStation);
-  });
+  }, [walkTo]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === "e" && nearbyStation && !frozen) {
-        pendingStation.current = nearbyStation;
-        const station = WORLD_STATIONS.find((s) => s.id === nearbyStation);
-        if (station) {
-          setWalkTarget(station.position);
-        }
-      }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== "KeyE" || frozen || isTypingTarget(event.target)) return;
+      if (nearbyRef.current) walkTo(nearbyRef.current);
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [nearbyStation, frozen]);
+  }, [frozen, walkTo]);
+
+  useFrame(() => {
+    let closest: StationId | null = null;
+    let closestDistance = INTERACT_DISTANCE;
+    if (!frozen) {
+      for (const station of WORLD_STATIONS) {
+        if (!unlockedStationIds.includes(station.id)) continue;
+        const distance = Math.hypot(
+          playerState.position.x - station.position[0],
+          playerState.position.z - station.position[2],
+        );
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closest = station.id;
+        }
+      }
+    }
+    if (nearbyRef.current !== closest) {
+      nearbyRef.current = closest;
+      setNearbyStation(closest);
+    }
+  });
 
   return (
     <>
-      <color attach="background" args={["#9fc7df"]} />
-      <fog attach="fog" args={["#9fc7df", 28, 72]} />
-      <Sky distance={450000} sunPosition={[-18, 18, -22]} turbidity={7} rayleigh={1.5} mieCoefficient={0.004} mieDirectionalG={0.82} />
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[-10, 18, 8]} intensity={2.2} castShadow shadow-mapSize={[2048, 2048]} />
-      <hemisphereLight args={["#dce8ec", "#536066", 1.1]} />
+      <Atmosphere timeOfDay={timeOfDay} />
+      <Terrain />
+      <Road rotation={0} />
+      <Road rotation={Math.PI / 2} />
+      <Plaza />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#c7a15d" roughness={1} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
-        <planeGeometry args={[72, 72]} />
-        <meshStandardMaterial color="#d9b873" roughness={1} />
-      </mesh>
-      <Grid
-        infiniteGrid
-        fadeDistance={46}
-        fadeStrength={0.45}
-        cellSize={2}
-        sectionSize={10}
-        cellColor="#c8a96d"
-        sectionColor="#b59255"
-        position={[0, 0.018, 0]}
-      />
-      <Sun />
-      <MountainRange />
-      <Road rotation={0} position={[0, 0, 0]} />
-      <Road rotation={Math.PI / 2} position={[0, 0, 0]} />
-
-      <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[3.6, 3.6, 0.08, 48]} />
-        <meshStandardMaterial color="#8b9698" roughness={0.8} />
-      </mesh>
-
-      {TREE_POSITIONS.map(([x, y, z, scale], index) => (
-        <Tree key={index} position={[x, y, z]} scale={scale} />
+      {TREE_POSITIONS.map(([x, z, scale], index) => (
+        <CampusTree key={index} position={[x, 0, z]} scale={scale} />
+      ))}
+      {LAMP_POSTS.map((position, index) => (
+        <LampPost key={index} position={position} night={night} />
       ))}
 
       {WORLD_STATIONS.map((station) => (
@@ -221,35 +233,23 @@ export function Campus() {
           station={station}
           unlocked={unlockedStationIds.includes(station.id)}
           active={activeStationId === station.id}
-          onSelect={() => {
-            pendingStation.current = station.id;
-            setWalkTarget(station.position);
-          }}
+          night={night}
+          onSelect={() => walkTo(station.id)}
         />
       ))}
 
-      {nearbyStation && !frozen && (
-        <Text
-          position={[playerPos.current.x, 2, playerPos.current.z]}
-          fontSize={0.28}
-          color="#f4d58b"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.04}
-          outlineColor="#283033"
-        >
-          Press E to interact
-        </Text>
-      )}
+      <Crystals />
+      <InteractPrompt visible={nearbyStation !== null && !frozen} />
 
       <Player
-        target={walkTarget}
+        request={walkRequest}
         frozen={frozen}
-        onArrive={() => {
-          if (pendingStation.current) {
-            openStation(pendingStation.current);
-          }
+        obstacles={obstacles}
+        onArrive={(stationId) => {
+          setWalkRequest(null);
+          openStation(stationId);
         }}
+        onCancelRequest={() => setWalkRequest(null)}
       />
       <CameraRig />
     </>

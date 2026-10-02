@@ -1,5 +1,6 @@
 "use client";
 
+import { CRYSTAL_XP } from "@/content/crystals";
 import { getLesson } from "@/content/lessons";
 import { getMission, getMissionFor } from "@/content/missions";
 import { submitStep } from "@/lib/missions/engine";
@@ -17,7 +18,14 @@ import type {
 } from "@/types/game";
 import { create } from "zustand";
 
+export type TimeOfDay = "day" | "sunset" | "night";
+
+const TIME_OF_DAY_ORDER: TimeOfDay[] = ["day", "sunset", "night"];
+
 type GameStore = Progress & {
+  collectedCrystalIds: string[];
+  lastPickup: { id: string; at: number } | null;
+  timeOfDay: TimeOfDay;
   hydrated: boolean;
   activeStationId: StationId | null;
   activeMode: LearningMode | null;
@@ -40,12 +48,15 @@ type GameStore = Progress & {
   runShell: (command: string) => string;
   askTutor: (message: string) => Promise<void>;
   resetProgress: () => void;
+  collectCrystal: (id: string) => void;
+  cycleTimeOfDay: () => void;
 };
 
-function persistSlice(state: Progress) {
+function persistSlice(state: Pick<GameStore, "xp" | "completedMissionIds" | "collectedCrystalIds">) {
   saveProgress({
     xp: state.xp,
     completedMissionIds: state.completedMissionIds,
+    collectedCrystalIds: state.collectedCrystalIds,
   });
 }
 
@@ -59,6 +70,9 @@ function withUnlocks(xp: number, completedMissionIds: string[]): Progress {
 
 export const useGameStore = create<GameStore>((set, get) => ({
   ...createInitialProgress(),
+  collectedCrystalIds: [],
+  lastPickup: null,
+  timeOfDay: "day",
   hydrated: false,
   activeStationId: null,
   activeMode: null,
@@ -69,7 +83,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     {
       id: "welcome",
       role: "tutor",
-      text: "Welcome to LAMP Quest. Click a glowing station, then Learn, Practice, or DIY. Ask me if a step is unclear.",
+      text: "Welcome to LAMP Quest. Explore the valley with WASD, collect data crystals for bonus XP, and walk up to a glowing station (or click it) to start Learn, Practice, or DIY. Ask me if a step is unclear.",
     },
   ],
   isTutorThinking: false,
@@ -78,7 +92,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   hydrate: () => {
     const loaded = loadProgress();
-    set({ ...withUnlocks(loaded.xp, loaded.completedMissionIds), hydrated: true });
+    set({
+      ...withUnlocks(loaded.xp, loaded.completedMissionIds),
+      collectedCrystalIds: loaded.collectedCrystalIds,
+      hydrated: true,
+    });
   },
 
   openStation: (id) => {
@@ -188,6 +206,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     shellSnapshot = createShellSnapshot();
     set({
       ...createInitialProgress(),
+      collectedCrystalIds: [],
+      lastPickup: null,
       hydrated: true,
       activeStationId: null,
       activeMode: null,
@@ -197,6 +217,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastCommand: undefined,
       lastOutput: undefined,
     });
+  },
+
+  collectCrystal: (id) => {
+    const state = get();
+    if (!state.hydrated || state.collectedCrystalIds.includes(id)) return;
+    const next = {
+      xp: state.xp + CRYSTAL_XP,
+      completedMissionIds: state.completedMissionIds,
+      collectedCrystalIds: [...state.collectedCrystalIds, id],
+    };
+    persistSlice(next);
+    set({ ...next, lastPickup: { id, at: Date.now() } });
+  },
+
+  cycleTimeOfDay: () => {
+    const current = TIME_OF_DAY_ORDER.indexOf(get().timeOfDay);
+    set({ timeOfDay: TIME_OF_DAY_ORDER[(current + 1) % TIME_OF_DAY_ORDER.length] });
   },
 }));
 
@@ -229,7 +266,7 @@ function applyPayload(
     if (!state.completedMissionIds.includes(mission.id)) {
       const completedMissionIds = [...state.completedMissionIds, mission.id];
       const next = withUnlocks(state.xp + mission.xp, completedMissionIds);
-      persistSlice(next);
+      persistSlice({ ...next, collectedCrystalIds: state.collectedCrystalIds });
       set({
         ...next,
         currentStepIndex: nextIndex,
