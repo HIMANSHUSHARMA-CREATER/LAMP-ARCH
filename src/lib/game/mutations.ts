@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ACHIEVEMENTS, type AchievementKey } from "@/content/quest/achievements";
 import { SCORE_REASON_LABEL, SCORE_RULES, type ScoreReason } from "@/lib/game/scoring";
 import { cascadeMilestones, levelFor } from "@/lib/game/progression";
+import { ApiError } from "@/lib/api/errors";
 import type { GameEvent } from "@/lib/game/state";
 
 export async function loadMilestones(supabase: SupabaseClient, playerId: string): Promise<Set<string>> {
@@ -22,18 +23,22 @@ export async function recordMilestone(
   milestone: string,
   context: { level: number; location: string },
 ): Promise<boolean> {
-  const { error } = await supabase.from("game_progress").upsert(
-    {
-      player_id: playerId,
-      milestone,
-      level: context.level,
-      location: context.location,
-      status: "completed",
-      completed_at: new Date().toISOString(),
-    },
-    { onConflict: "player_id,milestone", ignoreDuplicates: true },
-  );
-  return !error;
+  const { data, error } = await supabase
+    .from("game_progress")
+    .upsert(
+      {
+        player_id: playerId,
+        milestone,
+        level: context.level,
+        location: context.location,
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "player_id,milestone", ignoreDuplicates: true },
+    )
+    .select("milestone");
+  if (error) throw new ApiError(500, "DB_ERROR", "Failed to record progress.");
+  return (data?.length ?? 0) === 1;
 }
 
 /** Record milestone + cascade; returns GameEvents for every milestone actually added. */
@@ -70,18 +75,17 @@ export async function grantAchievement(
 ): Promise<GameEvent | null> {
   const def = ACHIEVEMENTS.find((a) => a.key === key);
   if (!def) return null;
-  const { error } = await supabase.from("achievements").upsert(
-    { player_id: playerId, achievement_key: def.key, achievement_name: def.name, description: def.description },
-    { onConflict: "player_id,achievement_key", ignoreDuplicates: true },
-  );
-  if (error) return null;
-  // upsert with ignoreDuplicates doesn't tell us if it inserted; check count instead.
-  const { count } = await supabase
+  const { data, error } = await supabase
     .from("achievements")
-    .select("id", { count: "exact", head: true })
-    .eq("player_id", playerId)
-    .eq("achievement_key", key);
-  return count === 1 ? { type: "achievement", key: def.key, name: def.name, description: def.description } : null;
+    .upsert(
+      { player_id: playerId, achievement_key: def.key, achievement_name: def.name, description: def.description },
+      { onConflict: "player_id,achievement_key", ignoreDuplicates: true },
+    )
+    .select("achievement_key");
+  if (error) throw new ApiError(500, "DB_ERROR", "Failed to record achievement.");
+  return (data?.length ?? 0) === 1
+    ? { type: "achievement", key: def.key, name: def.name, description: def.description }
+    : null;
 }
 
 export async function awardScore(
@@ -91,7 +95,16 @@ export async function awardScore(
   missionId?: string,
 ): Promise<GameEvent> {
   const delta = SCORE_RULES[reason];
-  await supabase.rpc("award_score", { p_player: playerId, p_delta: delta, p_reason: reason, p_mission: missionId ?? null });
+  const { error } = await supabase.rpc("award_score", {
+    p_player: playerId,
+    p_delta: delta,
+    p_reason: reason,
+    p_mission: missionId ?? null,
+  });
+  if (error) {
+    console.error(`award_score failed: ${error.code}`);
+    throw new ApiError(500, "SCORE_ERROR", "Failed to update the score.");
+  }
   return { type: "score", delta, reason, label: SCORE_REASON_LABEL[reason] };
 }
 

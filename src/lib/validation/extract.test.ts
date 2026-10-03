@@ -64,6 +64,24 @@ describe("extractBundle", () => {
     expect(warnings.join(" ")).toMatch(/larger than 2 MB/);
   });
 
+  it("skips a zip bomb entry without fully inflating it", async () => {
+    // 30 MB of zeros compresses to ~30 KB.
+    const bomb = zipSync({ "bomb.txt": new Uint8Array(30 * 1024 * 1024) }, { level: 9 });
+    expect(bomb.length).toBeLessThan(200 * 1024);
+    const before = process.memoryUsage().heapUsed;
+    const { files, warnings } = await extractBundle("bomb.zip", bomb);
+    expect(files).toHaveLength(0);
+    expect(warnings.join(" ")).toMatch(/2 MB/);
+    // The 30 MB payload must never be resident at once (heap grows well under it).
+    expect(process.memoryUsage().heapUsed - before).toBeLessThan(30 * 1024 * 1024);
+  });
+
+  it("rejects many small entries totalling over 25 MB", async () => {
+    const entries: Record<string, Uint8Array> = {};
+    for (let i = 0; i < 14; i++) entries[`f${i}.txt`] = new Uint8Array(2 * 1024 * 1024 - 1).fill(0x61);
+    await expect(extractBundle("total.zip", zipSync(entries))).rejects.toMatchObject({ code: "ZIP_TOO_LARGE" });
+  });
+
   it("normalizes paths and rejects traversal", async () => {
     const zip = zipSync({
       "./ok.txt": u8("ok"),

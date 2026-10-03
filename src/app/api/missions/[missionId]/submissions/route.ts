@@ -1,7 +1,7 @@
 import { requirePlayer, submissionsBucket } from "@/lib/supabase/server";
 import { ApiError, okJson, withErrors } from "@/lib/api/errors";
 import { buildGameState, type GameEvent } from "@/lib/game/state";
-import { loadMilestones, recordMilestones, awardScore, grantAchievement, syncPlayer } from "@/lib/game/mutations";
+import { loadMilestones, recordMilestone, recordMilestones, awardScore, grantAchievement, syncPlayer } from "@/lib/game/mutations";
 import { MILESTONE } from "@/lib/game/progression";
 import { getQuestMission } from "@/content/quest/missions";
 import { extractBundle, BundleError } from "@/lib/validation/extract";
@@ -79,14 +79,19 @@ export const POST = withErrors<Ctx>(async (request: Request, ctx: Ctx) => {
   if (insertErr || !row) throw new ApiError(500, "DB_ERROR", "Failed to record the submission.");
   const submissionId = row.id as string;
 
-  // Upload the raw bytes to private storage (best-effort; validation does not depend on it).
+  // Upload the raw bytes to private storage; an upload failure fails the request.
   const objectPath = `${user.id}/${mission.id}/${submissionId}/${sanitizeFilename(file.name)}`;
   const { error: storageErr } = await supabase.storage
     .from(submissionsBucket())
     .upload(objectPath, bytes, { contentType: file.type || "application/octet-stream" });
-  if (!storageErr) {
-    await supabase.from("submissions").update({ file_url: objectPath }).eq("id", submissionId);
+  if (storageErr) {
+    await supabase
+      .from("submissions")
+      .update({ status: "error", feedback: { reason: "storage" }, checked_at: new Date().toISOString() })
+      .eq("id", submissionId);
+    throw new ApiError(503, "STORAGE_UNAVAILABLE", "Submission storage is unavailable.");
   }
+  await supabase.from("submissions").update({ file_url: objectPath }).eq("id", submissionId);
 
   const fail = async (status: string, feedback: Record<string, unknown>, httpError: ApiError): Promise<never> => {
     await supabase
@@ -120,34 +125,41 @@ export const POST = withErrors<Ctx>(async (request: Request, ctx: Ctx) => {
       .update({ status: "passed", score: result.score, feedback: result, checked_at: new Date().toISOString() })
       .eq("id", submissionId);
 
-    events.push(await awardScore(supabase, user.id, "missionCompleted", mission.id));
-    if (result.score === 100) events.push(await awardScore(supabase, user.id, "correctImplementation", mission.id));
-    const { count: hintCount } = await supabase
-      .from("hint_unlocks")
-      .select("hint_index", { count: "exact", head: true })
-      .eq("player_id", user.id)
-      .eq("mission_id", mission.id);
-    if ((hintCount ?? 0) === 0) events.push(await awardScore(supabase, user.id, "noHints", mission.id));
-    if (attempt === 1) events.push(await awardScore(supabase, user.id, "firstSubmissionSuccess", mission.id));
+    // Award only when the passed milestone is genuinely new — prevents double
+    // scoring from concurrent or duplicate submissions.
+    const passedKey = MILESTONE.missionPassed(mission.id);
+    const isNew = await recordMilestone(supabase, user.id, passedKey, gameCtx);
+    if (isNew) {
+      milestones.add(passedKey);
+      events.push({ type: "milestone", key: passedKey });
 
-    events.push(
-      ...(await recordMilestones(supabase, user.id, milestones, [MILESTONE.missionPassed(mission.id)], gameCtx)),
-    );
+      events.push(await awardScore(supabase, user.id, "missionCompleted", mission.id));
+      if (result.score === 100) events.push(await awardScore(supabase, user.id, "correctImplementation", mission.id));
+      const { count: hintCount } = await supabase
+        .from("hint_unlocks")
+        .select("hint_index", { count: "exact", head: true })
+        .eq("player_id", user.id)
+        .eq("mission_id", mission.id);
+      if ((hintCount ?? 0) === 0) events.push(await awardScore(supabase, user.id, "noHints", mission.id));
+      if (attempt === 1) events.push(await awardScore(supabase, user.id, "firstSubmissionSuccess", mission.id));
 
-    const lampOrProd = mission.id === "BF-001" ? "lamp_builder" : "production_ready";
-    const a1 = await grantAchievement(supabase, user.id, lampOrProd);
-    if (a1) events.push(a1);
+      const lampOrProd = mission.id === "BF-001" ? "lamp_builder" : "production_ready";
+      const a1 = await grantAchievement(supabase, user.id, lampOrProd);
+      if (a1) events.push(a1);
 
-    // linux_engineer: first submission where every `linux`-tagged requirement passed.
-    const linuxOk = result.results.every(
-      (r) =>
-        r.status === "passed" ||
-        !mission.requirements.find((req) => req.id === r.id)?.tags?.includes("linux"),
-    );
-    if (linuxOk) {
-      const a2 = await grantAchievement(supabase, user.id, "linux_engineer");
-      if (a2) events.push(a2);
+      // linux_engineer: first submission where every `linux`-tagged requirement passed.
+      const linuxOk = result.results.every(
+        (r) =>
+          r.status === "passed" ||
+          !mission.requirements.find((req) => req.id === r.id)?.tags?.includes("linux"),
+      );
+      if (linuxOk) {
+        const a2 = await grantAchievement(supabase, user.id, "linux_engineer");
+        if (a2) events.push(a2);
+      }
     }
+    // Cascade any implied milestones either way.
+    events.push(...(await recordMilestones(supabase, user.id, milestones, [], gameCtx)));
   } else {
     await supabase
       .from("submissions")

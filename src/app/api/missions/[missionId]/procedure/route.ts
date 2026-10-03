@@ -1,7 +1,7 @@
 import { requirePlayer, submissionsBucket } from "@/lib/supabase/server";
 import { ApiError, okJson, withErrors } from "@/lib/api/errors";
 import { buildGameState, type GameEvent } from "@/lib/game/state";
-import { loadMilestones, recordMilestones, awardScore, grantAchievement, syncPlayer } from "@/lib/game/mutations";
+import { loadMilestones, recordMilestone, recordMilestones, awardScore, grantAchievement, syncPlayer } from "@/lib/game/mutations";
 import { MILESTONE } from "@/lib/game/progression";
 import { getQuestMission } from "@/content/quest/missions";
 import { extractBundle, BundleError } from "@/lib/validation/extract";
@@ -71,8 +71,6 @@ export const POST = withErrors<Ctx>(async (request: Request, ctx: Ctx) => {
     throw new ApiError(413, "PROCEDURE_TOO_LONG", `Procedure text exceeds ${PROCEDURE_MAX_TEXT_CHARS} characters.`);
   }
 
-  const review = reviewProcedure(mission, text);
-
   const { data: prev } = await supabase
     .from("procedures")
     .select("attempt")
@@ -91,37 +89,57 @@ export const POST = withErrors<Ctx>(async (request: Request, ctx: Ctx) => {
       format,
       procedure_text: text.slice(0, PROCEDURE_MAX_TEXT_CHARS),
       file_name: fileName,
-      status: review.accepted ? "accepted" : "needs_improvement",
-      score: review.score,
-      feedback: review,
-      reviewed_at: new Date().toISOString(),
+      status: "checking",
     })
     .select("id")
     .single();
   if (insertErr || !row) throw new ApiError(500, "DB_ERROR", "Failed to record the procedure.");
   const procedureId = row.id as string;
 
+  // Upload the file before any review/score side effects; failure fails the request.
   if (fileBytes && fileName) {
     const objectPath = `${user.id}/${mission.id}/${procedureId}/${fileName}`;
     const { error: storageErr } = await supabase.storage
       .from(submissionsBucket())
       .upload(objectPath, fileBytes, { contentType: "application/octet-stream" });
-    if (!storageErr) {
-      await supabase.from("procedures").update({ file_url: objectPath }).eq("id", procedureId);
+    if (storageErr) {
+      await supabase
+        .from("procedures")
+        .update({ status: "error", feedback: { reason: "storage" }, reviewed_at: new Date().toISOString() })
+        .eq("id", procedureId);
+      throw new ApiError(503, "STORAGE_UNAVAILABLE", "Submission storage is unavailable.");
     }
+    await supabase.from("procedures").update({ file_url: objectPath }).eq("id", procedureId);
   }
+
+  const review = reviewProcedure(mission, text);
+  await supabase
+    .from("procedures")
+    .update({
+      status: review.accepted ? "accepted" : "needs_improvement",
+      score: review.score,
+      feedback: review,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", procedureId);
 
   const events: GameEvent[] = [];
   const gameCtx = { level: player.current_level, location: player.current_location };
   if (review.accepted) {
-    events.push(await awardScore(supabase, user.id, "goodProcedure", mission.id));
-    events.push(
-      ...(await recordMilestones(supabase, user.id, milestones, [MILESTONE.missionDocumented(mission.id)], gameCtx)),
-    );
-    if (review.complete) {
-      const a = await grantAchievement(supabase, user.id, "documentation_master");
-      if (a) events.push(a);
+    // Award only when the documented milestone is genuinely new.
+    const documentedKey = MILESTONE.missionDocumented(mission.id);
+    const isNew = await recordMilestone(supabase, user.id, documentedKey, gameCtx);
+    if (isNew) {
+      milestones.add(documentedKey);
+      events.push({ type: "milestone", key: documentedKey });
+      events.push(await awardScore(supabase, user.id, "goodProcedure", mission.id));
+      if (review.complete) {
+        const a = await grantAchievement(supabase, user.id, "documentation_master");
+        if (a) events.push(a);
+      }
     }
+    // Cascade company completions / next-company unlock / game completion.
+    events.push(...(await recordMilestones(supabase, user.id, milestones, [], gameCtx)));
     if (milestones.has(MILESTONE.gameCompleted)) {
       const a = await grantAchievement(supabase, user.id, "server_quest_champion");
       if (a) events.push(a);

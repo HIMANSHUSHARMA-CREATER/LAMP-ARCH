@@ -59,19 +59,16 @@ export const POST = withErrors(async (request: Request) => {
       if (!milestones.has(`mission:${mission.id}:accepted`)) {
         throw new ApiError(403, "MISSION_NOT_ACCEPTED", "Accept the mission before using hints.");
       }
-      const { error } = await supabase.from("hint_unlocks").upsert(
-        { player_id: user.id, mission_id: mission.id, hint_index: hintIndex },
-        { onConflict: "player_id,mission_id,hint_index", ignoreDuplicates: true },
-      );
-      if (!error) {
-        const { count } = await supabase
-          .from("hint_unlocks")
-          .select("hint_index", { count: "exact", head: true })
-          .eq("player_id", user.id)
-          .eq("mission_id", mission.id)
-          .eq("hint_index", hintIndex);
-        const firstUnlock = (count ?? 0) <= 1;
-        if (firstUnlock) events.push(await awardScore(supabase, user.id, "hintUsed", mission.id));
+      const { data: inserted, error } = await supabase
+        .from("hint_unlocks")
+        .upsert(
+          { player_id: user.id, mission_id: mission.id, hint_index: hintIndex },
+          { onConflict: "player_id,mission_id,hint_index", ignoreDuplicates: true },
+        )
+        .select("hint_index");
+      if (error) throw new ApiError(500, "DB_ERROR", "Failed to unlock hint.");
+      if ((inserted?.length ?? 0) === 1) {
+        events.push(await awardScore(supabase, user.id, "hintUsed", mission.id));
       }
       break;
     }

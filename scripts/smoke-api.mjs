@@ -64,6 +64,14 @@ for (const m of ["entered_home", "found_magic_box", "visited_intro_hub"]) {
   check(`milestone ${m}`, r.status === 200 && r.json?.ok);
 }
 
+// --- idempotency: re-post found_magic_box → no second explorer achievement event
+const repost1 = await api("/progress", { method: "POST", body: { type: "milestone", milestone: "found_magic_box" } });
+const repost2 = await api("/progress", { method: "POST", body: { type: "milestone", milestone: "found_magic_box" } });
+const explorerEvents = [repost1, repost2].flatMap((r) => r.json?.events ?? []).filter((e) => e.key === "explorer").length;
+check("re-posting found_magic_box emits no duplicate explorer event", explorerEvents === 0);
+const { data: achRows } = await supabase.from("achievements").select("achievement_key").eq("achievement_key", "explorer");
+check("exactly one explorer achievement row", (achRows ?? []).length === 1);
+
 // --- join byteforge / nexacore locked
 const joinBf = await api("/progress", { method: "POST", body: { type: "milestone", milestone: "company:byteforge:joined" } });
 check("company:byteforge:joined", joinBf.status === 200 && joinBf.json?.state?.milestones?.includes("company:byteforge:joined"));
@@ -73,6 +81,12 @@ check("company:nexacore:joined rejected (403)", joinNcEarly.status === 403 && jo
 // --- accept BF-001
 const acceptBf = await api("/missions/BF-001/accept", { method: "POST" });
 check("accept BF-001", acceptBf.status === 200 && acceptBf.json?.state?.milestones?.includes("mission:BF-001:accepted"));
+
+// --- hint idempotency: revealing hint 0 twice charges −50 only once
+const h1 = await api("/progress", { method: "POST", body: { type: "hint", missionId: "BF-001", hintIndex: 0 } });
+const h2 = await api("/progress", { method: "POST", body: { type: "hint", missionId: "BF-001", hintIndex: 0 } });
+const hintCharges = [h1, h2].flatMap((r) => r.json?.events ?? []).filter((e) => e.type === "score" && e.delta === -50).length;
+check("same hint twice → −50 charged once", hintCharges === 1);
 
 // --- bad submission → needs_improvement, −25
 const badForm = new FormData();
@@ -84,13 +98,31 @@ check("failedSubmission −25 event", bad.json?.events?.some((e) => e.type === "
 // --- good submission (docs/samples/BF-001 zip)
 const bfEntries = {};
 for (const f of readdirSync("docs/samples/BF-001")) bfEntries[f] = new Uint8Array(readFileSync(join("docs/samples/BF-001", f)));
-const goodForm = new FormData();
-goodForm.set("file", new Blob([zipSync(bfEntries)], { type: "application/zip" }), "bf-001.zip");
-const good = await api("/missions/BF-001/submissions", { method: "POST", form: goodForm });
-check("BF-001 zip → passed", good.status === 200 && good.json?.submission?.status === "passed", `score=${good.json?.result?.score}`);
+// --- concurrent double submission of the passing zip: scoring awarded once
+const dupForm = () => {
+  const f = new FormData();
+  f.set("file", new Blob([zipSync(bfEntries)], { type: "application/zip" }), "bf-001.zip");
+  return f;
+};
+const [c1, c2] = await Promise.all([
+  api("/missions/BF-001/submissions", { method: "POST", form: dupForm() }),
+  api("/missions/BF-001/submissions", { method: "POST", form: dupForm() }),
+]);
+const concurrentPassed = [c1, c2].filter((r) => r.status === 200 && r.json?.submission?.status === "passed").length;
+check("concurrent double submission: at least one passed", concurrentPassed >= 1, `statuses=${c1.status},${c2.status}`);
+const { data: mcEvents } = await supabase.from("score_events").select("id").eq("reason", "missionCompleted").eq("mission_id", "BF-001");
+check("missionCompleted awarded exactly once", (mcEvents ?? []).length === 1, `count=${(mcEvents ?? []).length}`);
+const good = c1.json?.submission?.status === "passed" ? c1 : c2;
+check("BF-001 zip → passed", good.json?.submission?.status === "passed", `score=${good.json?.result?.score}`);
 check("BF-001 score 100", good.json?.result?.score === 100);
 check("mission:BF-001:passed milestone", good.json?.state?.milestones?.includes("mission:BF-001:passed"));
-check("lamp_builder achievement", good.json?.events?.some((e) => e.key === "lamp_builder"));
+check("lamp_builder achievement", good.json?.state?.achievements?.some((a) => a.key === "lamp_builder") || good.json?.events?.some((e) => e.key === "lamp_builder"));
+
+// --- resubmit after pass → 409
+const resub = new FormData();
+resub.set("file", new Blob([zipSync(bfEntries)], { type: "application/zip" }), "bf-001.zip");
+const resubmit = await api("/missions/BF-001/submissions", { method: "POST", form: resub });
+check("resubmit after pass → 409 ALREADY_PASSED", resubmit.status === 409 && resubmit.json?.error?.code === "ALREADY_PASSED");
 
 // --- procedure BF-001 (markdown text)
 const bfProc = readFileSync("docs/samples/BF-001/PROCEDURE.md", "utf-8");
