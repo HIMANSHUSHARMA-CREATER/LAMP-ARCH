@@ -136,6 +136,37 @@ const TRACKER: [string, string][] = [
   [MILESTONE.gameCompleted, "Server Quest Complete"],
 ];
 
+/** Human-readable titles for milestone keys (toasts, logs). */
+export const MILESTONE_LABELS: Record<string, string> = Object.fromEntries(
+  TRACKER.map(([key, label]) => [key, label]),
+);
+MILESTONE_LABELS[MILESTONE.registered] = "Registered";
+MILESTONE_LABELS[MILESTONE.openedMissionPortal] = "Opened the mission portal";
+MILESTONE_LABELS[MILESTONE.missionAccepted("BF-001")] = "Accepted mission BF-001";
+MILESTONE_LABELS[MILESTONE.missionAccepted("NC-001")] = "Accepted mission NC-001";
+MILESTONE_LABELS[MILESTONE.companyJoined("byteforge")] = "Joined ByteForge Solutions";
+MILESTONE_LABELS[MILESTONE.companyJoined("nexacore")] = "Joined NexaCore Technologies";
+
+export function milestoneLabel(key: string): string {
+  if (MILESTONE_LABELS[key]) return MILESTONE_LABELS[key];
+  const joined = /^company:([\w-]+):joined$/.exec(key);
+  if (joined) {
+    const company = getCompany(joined[1]);
+    if (company) return `Joined ${company.name}`;
+  }
+  const unlocked = /^company:([\w-]+):unlocked$/.exec(key);
+  if (unlocked) {
+    const company = getCompany(unlocked[1]);
+    if (company) return `${company.name} unlocked`;
+  }
+  const completed = /^company:([\w-]+):completed$/.exec(key);
+  if (completed) {
+    const company = getCompany(completed[1]);
+    if (company) return `${company.name} complete`;
+  }
+  return key.replace(/[:_]/g, " ");
+}
+
 export function deriveQuestState(milestones: Iterable<string>): QuestState {
   const set = milestones instanceof Set ? milestones : new Set(milestones);
   const level = levelFor(set);
